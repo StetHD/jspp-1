@@ -1,4 +1,4 @@
-JavaScript++ Alpha 0.011
+JavaScript++ Alpha 0.013
 -----------------------
 
 JavaScript++ provides the same familiar C-style language syntax of JavaScript and brings modern language features such as classes; block scoping and constants; pluggable type systems and type safety; packages and modules; comprehensive standard libraries; enhanced regular expressions and PCRE; and more to JavaScript with almost no learning curve through an extended ES3 grammar.
@@ -68,10 +68,14 @@ You can join us on IRC at #javascript++ on freenode and use jsppBot as a sort of
 
 File Descriptions
 -----------------
-jsdefs.js - Lookup tables
-jsparse.js - Lexer/parser
-compiler.js - Code generator
-typed-es3.js - Emulation of typed ES3 environment.
+bin/ - Executables and Binaries
+bin/jspp - CLI compiler
+
+src/ - Parser and compiler source code
+src/jsdefs.js - Lookup tables
+src/jsparse.js - Lexer/parser
+src/compiler.js - Code generator
+src/typed-es3.js - Emulation of typed ES3 environment.
 
 lib/ - Standard Library
 lib/dom - DOM libraries
@@ -95,4 +99,5 @@ Credits
 Brendan Eich - JavaScript & Narcissus
 Guillaume Lathoud - v8/JSC port of Narcissus
 Roger Poon - JavaScript++ Language
+Jussi Kalliokoski - CLI Compiler
 QUnit - QUnit testing framework
