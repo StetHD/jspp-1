@@ -166,6 +166,522 @@ foo ||= "foo";
 </code>
 
 <!--
+#######################String Operations - String and Array#######################
+-->
+<code>
+#typesys strict
+
+var foo as String = "1" + [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" - [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" * [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" / [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ** [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" % [];
+</code>
+
+<code>
+#typesys strict
+
+var foo as String = "1" & [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" | [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ^ [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" << [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >> [];
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >>> [];
+</code>
+
+<code>
+#typesys strict
+
+var foo as String;
+
+foo += [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo -= [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo *= [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo /= [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo **= [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo %= [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ?= [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo &&= [];
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ||= [];
+</code>
+
+<!--
+#######################String Operations - String and Boolean#######################
+-->
+<code>
+#typesys strict
+
+var foo as String = "1" + true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" - true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" * true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" / true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ** true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" % true;
+</code>
+
+<code>
+#typesys strict
+
+var foo as String = "1" & true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" | true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ^ true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" << true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >> true;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >>> true;
+</code>
+
+<code>
+#typesys strict
+
+var foo as String;
+
+foo += true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo -= true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo *= true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo /= true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo **= true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo %= true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ?= true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo &&= true;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ||= true;
+</code>
+
+<!--
+#######################String Operations - String and Date#######################
+-->
+<code>
+#typesys strict
+
+var foo as String = "1" + new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" - new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" * new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" / new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ** new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" % new Date;
+</code>
+
+<code>
+#typesys strict
+
+var foo as String = "1" & new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" | new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ^ new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" << new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >> new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >>> new Date;
+</code>
+
+<code>
+#typesys strict
+
+var foo as String;
+
+foo += new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo -= new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo *= new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo /= new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo **= new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo %= new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ?= new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo &&= new Date;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ||= new Date;
+</code>
+
+<!--
+#######################String Operations - String and Function#######################
+-->
+<code>
+#typesys strict
+
+var foo as String = "1" + function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" - function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" * function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" / function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ** function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" % function(){};
+</code>
+
+<code>
+#typesys strict
+
+var foo as String = "1" & function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" | function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ^ function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" << function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >> function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >>> function(){};
+</code>
+
+<code>
+#typesys strict
+
+var foo as String;
+
+foo += function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo -= function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo *= function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo /= function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo **= function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo %= function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ?= function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo &&= function(){};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ||= function(){};
+</code>
+
+<!--
 #######################String Operations - String and Number#######################
 -->
 <code>
@@ -294,6 +810,264 @@ var foo as String;
 foo ||= 1;
 </code>
 
+<!--
+#######################String Operations - String and Object#######################
+-->
+<code>
+#typesys strict
+
+var foo as String = "1" + {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" - {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" * {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" / {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ** {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" % {};
+</code>
+
+<code>
+#typesys strict
+
+var foo as String = "1" & {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" | {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ^ {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" << {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >> {};
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >>> {};
+</code>
+
+<code>
+#typesys strict
+
+var foo as String;
+
+foo += {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo -= {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo *= {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo /= {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo **= {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo %= {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ?= {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo &&= {};
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ||= {};
+</code>
+
+<!--
+#######################String Operations - String and RegExp#######################
+-->
+<code>
+#typesys strict
+
+var foo as String = "1" + /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" - /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" * /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" / /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ** /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" % /(?:)/;
+</code>
+
+<code>
+#typesys strict
+
+var foo as String = "1" & /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" | /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" ^ /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" << /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >> /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String = "1" >>> /(?:)/;
+</code>
+
+<code>
+#typesys strict
+
+var foo as String;
+
+foo += /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo -= /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo *= /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo /= /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo **= /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo %= /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ?= /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo &&= /(?:)/;
+</code>
+<code>
+#typesys strict
+
+var foo as String;
+
+foo ||= /(?:)/;
+</code>
+
 <button onclick="Start()">Start</button>
 
 <script type="text/javascript" src="../src/jsdefs.js"></script>
@@ -322,8 +1096,6 @@ function Start() { //Problems with race conditions with qUnit, so wrap in functi
 var i = 0;
 
 test("Basic Requirements", function() {
-	expect(6);
-	
 	ok(code[i++], "Variable declaration");
 	ok(code[i++], "Multiple variable declaration");
 	ok(code[i++], "Variable initialization");
@@ -356,6 +1128,110 @@ test("String Operations - String and String", function() {
 	notEqual(code[i++].type, TypeError, "String ||= String");
 });
 
+test("String Operations - String and Array", function() {
+	equal(code[i++].type, TypeError, "String + Array");
+	equal(code[i++].type, TypeError, "String - Array");
+	equal(code[i++].type, TypeError, "String * Array");
+	equal(code[i++].type, TypeError, "String / Array");
+	equal(code[i++].type, TypeError, "String ** Array");
+	equal(code[i++].type, TypeError, "String % Array");
+	
+	equal(code[i++].type, TypeError, "String & Array");
+	equal(code[i++].type, TypeError, "String | Array");
+	equal(code[i++].type, TypeError, "String ^ Array");
+	equal(code[i++].type, TypeError, "String << Array");
+	equal(code[i++].type, TypeError, "String >> Array");
+	equal(code[i++].type, TypeError, "String >>> Array");
+	
+	equal(code[i++].type, TypeError, "String += Array");
+	equal(code[i++].type, TypeError, "String -= Array");
+	equal(code[i++].type, TypeError, "String *= Array");
+	equal(code[i++].type, TypeError, "String /= Array");
+	equal(code[i++].type, TypeError, "String **= Array");
+	equal(code[i++].type, TypeError, "String %= Array");
+	equal(code[i++].type, TypeError, "String ?= Array");
+	equal(code[i++].type, TypeError, "String &&= Array");
+	equal(code[i++].type, TypeError, "String ||= Array");
+});
+
+test("String Operations - String and Boolean", function() {
+	equal(code[i++].type, TypeError, "String + Boolean");
+	equal(code[i++].type, TypeError, "String - Boolean");
+	equal(code[i++].type, TypeError, "String * Boolean");
+	equal(code[i++].type, TypeError, "String / Boolean");
+	equal(code[i++].type, TypeError, "String ** Boolean");
+	equal(code[i++].type, TypeError, "String % Boolean");
+	
+	equal(code[i++].type, TypeError, "String & Boolean");
+	equal(code[i++].type, TypeError, "String | Boolean");
+	equal(code[i++].type, TypeError, "String ^ Boolean");
+	equal(code[i++].type, TypeError, "String << Boolean");
+	equal(code[i++].type, TypeError, "String >> Boolean");
+	equal(code[i++].type, TypeError, "String >>> Boolean");
+	
+	equal(code[i++].type, TypeError, "String += Boolean");
+	equal(code[i++].type, TypeError, "String -= Boolean");
+	equal(code[i++].type, TypeError, "String *= Boolean");
+	equal(code[i++].type, TypeError, "String /= Boolean");
+	equal(code[i++].type, TypeError, "String **= Boolean");
+	equal(code[i++].type, TypeError, "String %= Boolean");
+	equal(code[i++].type, TypeError, "String ?= Boolean");
+	equal(code[i++].type, TypeError, "String &&= Boolean");
+	equal(code[i++].type, TypeError, "String ||= Boolean");
+});
+
+test("String Operations - String and Date", function() {
+	equal(code[i++].type, TypeError, "String + Date");
+	equal(code[i++].type, TypeError, "String - Date");
+	equal(code[i++].type, TypeError, "String * Date");
+	equal(code[i++].type, TypeError, "String / Date");
+	equal(code[i++].type, TypeError, "String ** Date");
+	equal(code[i++].type, TypeError, "String % Date");
+	
+	equal(code[i++].type, TypeError, "String & Date");
+	equal(code[i++].type, TypeError, "String | Date");
+	equal(code[i++].type, TypeError, "String ^ Date");
+	equal(code[i++].type, TypeError, "String << Date");
+	equal(code[i++].type, TypeError, "String >> Date");
+	equal(code[i++].type, TypeError, "String >>> Date");
+	
+	equal(code[i++].type, TypeError, "String += Date");
+	equal(code[i++].type, TypeError, "String -= Date");
+	equal(code[i++].type, TypeError, "String *= Date");
+	equal(code[i++].type, TypeError, "String /= Date");
+	equal(code[i++].type, TypeError, "String **= Date");
+	equal(code[i++].type, TypeError, "String %= Date");
+	equal(code[i++].type, TypeError, "String ?= Date");
+	equal(code[i++].type, TypeError, "String &&= Date");
+	equal(code[i++].type, TypeError, "String ||= Date");
+});
+
+test("String Operations - String and Function", function() {
+	equal(code[i++].type, TypeError, "String + Function");
+	equal(code[i++].type, TypeError, "String - Function");
+	equal(code[i++].type, TypeError, "String * Function");
+	equal(code[i++].type, TypeError, "String / Function");
+	equal(code[i++].type, TypeError, "String ** Function");
+	equal(code[i++].type, TypeError, "String % Function");
+	
+	equal(code[i++].type, TypeError, "String & Function");
+	equal(code[i++].type, TypeError, "String | Function");
+	equal(code[i++].type, TypeError, "String ^ Function");
+	equal(code[i++].type, TypeError, "String << Function");
+	equal(code[i++].type, TypeError, "String >> Function");
+	equal(code[i++].type, TypeError, "String >>> Function");
+	
+	equal(code[i++].type, TypeError, "String += Function");
+	equal(code[i++].type, TypeError, "String -= Function");
+	equal(code[i++].type, TypeError, "String *= Function");
+	equal(code[i++].type, TypeError, "String /= Function");
+	equal(code[i++].type, TypeError, "String **= Function");
+	equal(code[i++].type, TypeError, "String %= Function");
+	equal(code[i++].type, TypeError, "String ?= Function");
+	equal(code[i++].type, TypeError, "String &&= Function");
+	equal(code[i++].type, TypeError, "String ||= Function");
+});
+
 test("String Operations - String and Number", function() {
 	equal(code[i++].type, TypeError, "String + Number");
 	equal(code[i++].type, TypeError, "String - Number");
@@ -380,6 +1256,58 @@ test("String Operations - String and Number", function() {
 	equal(code[i++].type, TypeError, "String ?= Number");
 	equal(code[i++].type, TypeError, "String &&= Number");
 	equal(code[i++].type, TypeError, "String ||= Number");
+});
+
+test("String Operations - String and Object", function() {
+	equal(code[i++].type, TypeError, "String + Object");
+	equal(code[i++].type, TypeError, "String - Object");
+	equal(code[i++].type, TypeError, "String * Object");
+	equal(code[i++].type, TypeError, "String / Object");
+	equal(code[i++].type, TypeError, "String ** Object");
+	equal(code[i++].type, TypeError, "String % Object");
+	
+	equal(code[i++].type, TypeError, "String & Object");
+	equal(code[i++].type, TypeError, "String | Object");
+	equal(code[i++].type, TypeError, "String ^ Object");
+	equal(code[i++].type, TypeError, "String << Object");
+	equal(code[i++].type, TypeError, "String >> Object");
+	equal(code[i++].type, TypeError, "String >>> Object");
+	
+	equal(code[i++].type, TypeError, "String += Object");
+	equal(code[i++].type, TypeError, "String -= Object");
+	equal(code[i++].type, TypeError, "String *= Object");
+	equal(code[i++].type, TypeError, "String /= Object");
+	equal(code[i++].type, TypeError, "String **= Object");
+	equal(code[i++].type, TypeError, "String %= Object");
+	equal(code[i++].type, TypeError, "String ?= Object");
+	equal(code[i++].type, TypeError, "String &&= Object");
+	equal(code[i++].type, TypeError, "String ||= Object");
+});
+
+test("String Operations - String and RegExp", function() {
+	equal(code[i++].type, TypeError, "String + RegExp");
+	equal(code[i++].type, TypeError, "String - RegExp");
+	equal(code[i++].type, TypeError, "String * RegExp");
+	equal(code[i++].type, TypeError, "String / RegExp");
+	equal(code[i++].type, TypeError, "String ** RegExp");
+	equal(code[i++].type, TypeError, "String % RegExp");
+	
+	equal(code[i++].type, TypeError, "String & RegExp");
+	equal(code[i++].type, TypeError, "String | RegExp");
+	equal(code[i++].type, TypeError, "String ^ RegExp");
+	equal(code[i++].type, TypeError, "String << RegExp");
+	equal(code[i++].type, TypeError, "String >> RegExp");
+	equal(code[i++].type, TypeError, "String >>> RegExp");
+	
+	equal(code[i++].type, TypeError, "String += RegExp");
+	equal(code[i++].type, TypeError, "String -= RegExp");
+	equal(code[i++].type, TypeError, "String *= RegExp");
+	equal(code[i++].type, TypeError, "String /= RegExp");
+	equal(code[i++].type, TypeError, "String **= RegExp");
+	equal(code[i++].type, TypeError, "String %= RegExp");
+	equal(code[i++].type, TypeError, "String ?= RegExp");
+	equal(code[i++].type, TypeError, "String &&= RegExp");
+	equal(code[i++].type, TypeError, "String ||= RegExp");
 });
 
 }
