@@ -2014,12 +2014,6 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.IDENTIFIER:
 			scope = this.CurrentScope();
 			
-			//Needs to come before "isMember" check
-			if (ast.value == "super" && this.CurrentClass()) {
-				out.push("__SUPER__");
-				break;
-			}
-			
 			//Member of an object
 			if (ast.isMember) {
 				out.push(ast.value);
@@ -2172,6 +2166,67 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.DOT:
 			out.push(generate(ast[0]));
 			out.push(".");
+			
+			var currentClass = this.CurrentClass();
+			
+			//Handle protected members
+			if (currentClass && ast[0] && ast[0].value != "this") {
+				var classObj = this.classes[currentClass.body.scopeId],
+					getSuperClass = classObj.__SUPER__;
+				
+				//Handle protected members of super class
+				if (ast[0].value == "super" && getSuperClass) {
+					var classMembers,
+						findIdentifier = ast[1].value;
+					
+					//Loop through the scope chain until we can find the 
+					//Activation Object for the super class
+					var i = 0,
+						j = 0,
+						_currentScope,
+						len = this.scopeChain.length,
+						_len = 0;
+					
+					for (; i < len; i++) {
+						_currentScope = this.scopeChain[i];
+						j = 0;
+						_len = _currentScope.length;
+						
+						for (; j < _len; j++) {
+							if (this.scopeChain[i][j].name == getSuperClass) {
+								classMembers = this.scopeChain[i][j].Variables;
+								break;
+							}
+						}
+					}
+				
+					//Now that we've found the super class, loop through its
+					//members to find out if we're accessing a protected member
+					for (var i = 0, len = classMembers.length; i < len; i++) {
+						if (classMembers[i].identifier == findIdentifier &&
+							classMembers[i]["[[Protected]]"]) {
+							out.push("__PROTECTED__.");
+							
+							break;
+						}
+					}
+				}
+				//Handle protected members of current class
+				else {
+					var classMembers = currentClass.Variables,
+						findIdentifier = ast[1].value;
+				
+					for (var i = 0, len = classMembers.length; i < len; i++) {
+						if (classMembers[i].identifier == findIdentifier &&
+							classMembers[i]["[[Protected]]"]) {
+							out.push("__PROTECTED__.");
+							
+							break;
+						}
+					}
+				}
+			}
+			
 			//Denote object member to prevent compiler warnings
 			if (ast[1].type == jsdef.IDENTIFIER) {
 				ast[1].isMember = true;
@@ -2547,6 +2602,11 @@ compiler.prototype.compile = function (ast) {
 			}
 			else {
 				out.push("this");
+			}
+			break;
+		case jsdef.SUPER:
+			if (this.currentClass) {
+				out.push("__SUPER__");
 			}
 			break;
 		case jsdef.HOOK: //Ternary

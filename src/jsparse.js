@@ -1286,6 +1286,7 @@
 
                 case jsdef.NULL: case jsdef.THIS: case jsdef.TRUE: case jsdef.FALSE:
                 case jsdef.IDENTIFIER: case jsdef.NUMBER: case jsdef.STRING: case jsdef.REGEXP:
+                case jsdef.SUPER:
                     if (!t.scanOperand)
                         break loop;
                     operands.push(new Node(t));

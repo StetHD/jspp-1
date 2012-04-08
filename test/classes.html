@@ -647,16 +647,30 @@ class bar : foo {
 </code>
 <code class="eval">
 class foo {
-	public function bar() { return true }
+	protected function bar() { return true }
 }
-class widget : foo {
-	public var baz = super.bar();
-	
-	public function Constructor() {
+class baz : foo {
+	public function qux() {
+		return super.bar();
 	}
 }
-(class : widget {
-	public function Constructor(){ return super.super.bar() }
+(function() {
+	var instance = new baz;
+	return instance.qux();
+})()
+</code>
+<code class="eval">
+class foo {
+	protected var bar = true;
+}
+class baz : foo {
+	public function qux() {
+		return super.bar;
+	}
+}
+(function() {
+	var instance = new baz;
+	return instance.qux();
 })()
 </code>
 
@@ -1151,11 +1165,10 @@ test("Access Modifiers", function() {
 });
 
 test("Super", function() {
-	expect(3);
-	
 	ok(code[i++], "super Keyword");
-	equal(code[i++], true, "Walk inheritance chain once and access properties");
-	equal(code[i++], true, "Walk inheritance chain twice and access properties");
+	equal(code[i++], true, "Access superclass properties");
+	equal(code[i++], true, "Access superclass protected method (dot accessor)");
+	equal(code[i++], true, "Access superclass protected field (dot accessor)");
 });
 
 test("Constructors / Destructors", function() {

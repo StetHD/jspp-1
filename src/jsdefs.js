@@ -106,7 +106,7 @@
         "new", "null",
         "private", "protected", "public",
         "return",
-        "static", "switch",
+        "static", "super", "switch",
         "this", "throw", "true", "try", "typeof", "#typesys",
         "var", "void", "as", "let",
         "while", "with"
