@@ -2170,7 +2170,7 @@ compiler.prototype.compile = function (ast) {
 			var currentClass = this.CurrentClass();
 			
 			//Handle protected members
-			if (currentClass && ast[0] && ast[0].value != "this") {
+			if (currentClass && ast[0]) {
 				var classObj = this.classes[currentClass.body.scopeId],
 					getSuperClass = classObj.__SUPER__;
 				
@@ -2212,7 +2212,7 @@ compiler.prototype.compile = function (ast) {
 					}
 				}
 				//Handle protected members of current class
-				else {
+				/*else if (ast[0].value == "this") {
 					var classMembers = currentClass.Variables,
 						findIdentifier = ast[1].value;
 				
@@ -2224,7 +2224,7 @@ compiler.prototype.compile = function (ast) {
 							break;
 						}
 					}
-				}
+				}*/
 			}
 			
 			//Denote object member to prevent compiler warnings
