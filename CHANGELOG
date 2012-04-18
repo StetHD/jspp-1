@@ -2,6 +2,7 @@ Alpha 0.014
 -----------
 * Updated unit tests
 * Improved test coverage for static typing
+* Fixed bugs with "this" keyword when used inside classes
 
 1/29/12 - Alpha 0.013
 --------
