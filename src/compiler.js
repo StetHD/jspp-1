@@ -489,7 +489,7 @@ function compiler(ast, options) {
 	};
 	
 	this.InsideStaticMember = function() {
-		return !!this.classVars.length && 
+		return this.classVars.length && 
 				(!!this.classVars[this.classVars.length-1].static ||
 				 !!this.classVars[this.classVars.length-1].body.static);
 	};
@@ -2597,7 +2597,30 @@ compiler.prototype.compile = function (ast) {
 		
 		//Miscellaneous
 		case jsdef.THIS:
-			if (this.currentClass) {
+			/*
+			 *class foo {
+			 *  public function() {
+			 *    this; //replace with instance value
+			 *    
+			 *    function bar() {
+			 *      this; //don't replace, just compile as "this" keyword
+			 *    }
+			 *
+			 *    static function baz() {
+			 *      this; //don't replace for static methods
+			 *    };
+			 *  }
+			 *}
+			 */
+			//Walk two scopes up to determine if we're too "deep" within the 
+			//class to replace this value
+			var twoScopesUp = this.scopeChain[this.scopeChain.length-2];
+			
+			if (this.currentClass &&
+				twoScopesUp &&
+				twoScopesUp.type == jsdef.CLASS &&
+				!this.InsideStaticMember()) {
+				
 				out.push(this.classId);
 			}
 			else {

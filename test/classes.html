@@ -888,6 +888,175 @@ class foo {
 
 (new foo).bar
 </code>
+<code class="eval">
+class foo {
+    static function bar() {
+        return this === foo;
+    }
+}
+
+foo.bar()
+</code>
+<code class="eval">
+(function() {
+	class foo {
+		public var bar = function() {
+		    return this === baz;
+		};
+	}
+
+	var baz = new foo;
+
+	return baz.bar();
+})();
+</code>
+<code class="eval">
+(function() {
+	class foo {
+		public function bar() {
+		    return this === baz;
+		}
+	}
+
+	var baz = new foo;
+
+	return baz.bar();
+})();
+</code>
+<code class="eval">
+(function(global) {
+	class foo {
+		public var bar = function() {
+			function widget() {
+				return this === global;
+			}
+			
+		    return widget();
+		};
+	}
+
+	var baz = new foo;
+
+	return baz.bar();
+})(this);
+</code>
+<code class="eval">
+(function(global) {
+	class foo {
+		public function bar() {
+		    function widget() {
+				return this === global;
+			}
+			
+		    return widget();
+		}
+	}
+
+	var baz = new foo;
+
+	return baz.bar();
+})(this);
+</code>
+<code class="eval">
+(function() {
+	class foo {
+		public var bar = function() {
+			class widget {
+				public var qux = function() {
+					return this === baz;
+				};
+			}
+			
+			var baz = new widget;
+			
+		    return baz.qux();
+		};
+	}
+
+	return (new foo).bar();
+})();
+</code>
+<code class="eval">
+(function() {
+	class foo {
+		public function bar() {
+			class widget {
+				public function qux() {
+					return this === baz;
+				};
+			}
+			
+			var baz = new widget;
+			
+		    return baz.qux();
+		};
+	}
+
+	return (new foo).bar();
+})();
+</code>
+<code class="eval">
+(function(global) {
+	class foo {
+		public var bar = function() {
+			function widget() {
+				return this === global;
+			}
+			
+		    return widget();
+		};
+	}
+
+	var baz = new foo;
+
+	return baz.bar();
+})(this);
+
+(function(global) {
+	class foo {
+		public var bar = function() {
+			class widget {
+				public var qux = function() {
+					function quux() {
+						return this === global;
+					}
+					
+					return quux();
+				};
+			}
+			
+			var baz = new widget;
+			
+		    return baz.qux();
+		};
+	}
+
+	return (new foo).bar();
+})(this);
+</code>
+<code class="eval">
+(function(global) {
+	class foo {
+		public function bar() {
+			class widget {
+				public function qux() {
+					function quux() {
+						return this === global;
+					}
+					
+					return quux();
+				};
+			}
+			
+			var baz = new widget;
+			
+		    return baz.qux();
+		};
+	}
+
+	return (new foo).bar();
+})(this);
+</code>
 
 <!--
 #######################MISCELLANEOUS#######################
@@ -1189,6 +1358,7 @@ test("Method Overloading", function() {
 
 test("this Keyword", function() {
 	equal(code[i++], true, "this keyword");
+	
 	equal(code[i++], true, "this keyword creates public instance variable");
 	equal(code[i++], void 0, "this keyword creates public instance variable which cannot be accessed without an instance");
 	equal(code[i++], true, "this keyword creates public instance variable which overrides private variable");
@@ -1200,6 +1370,17 @@ test("this Keyword", function() {
 	equal(code[i++], true, "this keyword resolves identifiers correctly when overriding a private variable with redeclaration");
 	equal(code[i++], true, "this keyword resolves identifiers correctly when overriding a public variable with redeclaration");
 	equal(code[i++], true, "this keyword resolves identifiers correctly when overriding a protected variable with redeclaration");
+	
+	equal(code[i++], true, "this keyword resolves correctly for static methods");
+	
+	equal(code[i++], true, "this keyword is replaced with class instance for method of class (method created via 'var')");
+	equal(code[i++], true, "this keyword is replaced with class instance for method of class (method created via 'function')");
+	equal(code[i++], true, "this keyword is NOT replaced with class instance for functions inside method of class (method created via 'var')");
+	equal(code[i++], true, "this keyword is NOT replaced with class instance for functions inside method of class (method created via 'function')");
+	equal(code[i++], true, "this keyword is replaced with class instance for method of nested class (method created via 'var')");
+	equal(code[i++], true, "this keyword is replaced with class instance for method of nested class (method created via 'function')");
+	equal(code[i++], true, "this keyword is NOT replaced with class instance for functions inside method of nested class (method created via 'var')");
+	equal(code[i++], true, "this keyword is NOT replaced with class instance for functions inside method of nested class (method created via 'function')");
 });
 
 test("Miscellaneous", function() {
