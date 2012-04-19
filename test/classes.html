@@ -389,7 +389,7 @@ class foo {
 <code class="eval">
 class foo {
 	static var bar = class {
-		public function baz(){ return 1 }
+		public function baz(){ return true }
 
 		public function getBaz() { return baz() }
 	};
@@ -400,7 +400,7 @@ class foo {
 <code class="eval">
 class foo {
 	static var bar = class {
-		protected function baz(){ return 1 }
+		protected function baz(){ return true }
 
 		public function getBaz() { return baz() }
 	};
@@ -411,20 +411,9 @@ class foo {
 <code class="eval">
 class foo {
 	static var bar = class {
-		private function baz(){ return 1 }
+		private function baz(){ return true }
 
 		public function getBaz() { return baz() }
-	};
-}
-
-(new foo.bar).getBaz();
-</code>
-<code class="eval">
-class foo {
-	static var bar = class {
-		public function getBaz() { return baz() }
-		
-		public function baz(){ return 1 }
 	};
 }
 
@@ -435,7 +424,7 @@ class foo {
 	static var bar = class {
 		public function getBaz() { return baz() }
 		
-		protected function baz(){ return 1 }
+		public function baz(){ return true }
 	};
 }
 
@@ -446,7 +435,18 @@ class foo {
 	static var bar = class {
 		public function getBaz() { return baz() }
 		
-		private function baz(){ return 1 }
+		protected function baz(){ return true }
+	};
+}
+
+(new foo.bar).getBaz();
+</code>
+<code class="eval">
+class foo {
+	static var bar = class {
+		public function getBaz() { return baz() }
+		
+		private function baz(){ return true }
 	};
 }
 
@@ -868,11 +868,11 @@ class foo {
 </code>
 <code class="eval">
 class foo {
-	public var bar = true;
+	public var bar = 10;
 	public function() {
 		this.bar = bar;
 	}
-	public var bar = 10;
+	public var bar = true;
 }
 
 (new foo).bar

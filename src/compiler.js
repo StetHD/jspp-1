@@ -528,7 +528,9 @@ compiler.prototype.compile = function (ast) {
 			
 			if (isGlobalScope) {
 				this.PushToVarCache(ast.varDecls);
-				!this.options.nowrap && out.push("(function(global){");
+				if (!this.options.nowrap) {
+					out.push("(function(){var global=this;");
+				}
 				
 				//If we plugged in a type system, declare the conversion functions
 				if (this.typeSystem !== null) {
@@ -603,7 +605,7 @@ compiler.prototype.compile = function (ast) {
 			}
 			
 			if (isGlobalScope) {
-				!this.options.nowrap && out.push("}).call({},this);");
+				!this.options.nowrap && out.push("}).call();");
 				this.varCache = null;
 			}
 			
