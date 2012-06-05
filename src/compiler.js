@@ -942,25 +942,95 @@ compiler.prototype.compile = function (ast) {
 			//Push methods - we do this separately in case of overloading
 			//Methods should come first to make class method declarations behave
 			//like JS function declarations
-			var _out, staticItems = [];
+			var _out, staticItems = [], currentMethod;
 			for (var i in methods) {
 				//Method is not overloaded, just push it
 				if (methods[i].length == 1) {
-					this.classVars.push(methods[i][0]);
+					this.classVars.push(currentMethod = methods[i][0]);
 					
-					_out = (methods[i][0].static && !methods[i][0].private && !methods[i][0].protected) ?
-							((methods[i][0].body.static = true), staticItems) : out;
+					_out = (currentMethod.static && !currentMethod.private && !currentMethod.protected) ?
+							((currentMethod.body.static = true), staticItems) : out;
 					_out.push(generate(methods[i].shift()));
+					
+					if (currentMethod.public) {
+						this.classes[this.CurrentClassScopeId()].publicMembers.push(currentMethod.name);
+					}
+					if (currentMethod.protected) {
+						this.classes[this.CurrentClassScopeId()].protectedMembers.push(currentMethod.name);
+					}
 					
 					this.classVars.pop();
 				}
 				//Overloaded method
 				else {
-					//TODO: method overloading
-					/*_out.push("function " + methods[i][0].name + "(){");
-					var firstVar = true;
-					for (var j=0,_len=methods[i].length;j<_len;j++) {
-						_out = methods[i][j].static ? staticItems : out;
+					var firstVar = true,
+						currentMethod;
+					
+					for (var j = 0, _len = methods[i].length; j < _len; j++) {
+						currentMethod = methods[i][j];
+						
+						//public static methods
+						if (currentMethod.static && !currentMethod.private &&
+							!currentMethod.protected) {
+							
+							currentMethod.body.static = true;
+							_out = staticItems;
+							
+							//Create the header for overloaded method
+							if (j == 0) {
+								_out.push(ast.name + "." + methods[i][0].name);
+								_out.push("=function(){");
+							}
+						}
+						//public, private, protected methods
+						else {
+							_out = out;
+							
+							if (j == 0) {
+								//public methods
+								if (currentMethod.public) {
+									_out.push("this." + methods[i][0].name);
+								}
+								//private methods
+								else if (currentMethod.private) {
+									_out.push("var " + methods[i][0].name);
+								}
+								//protected methods
+								else if (currentMethod.protected) {
+									_out.push("this.__PROTECTED__." +
+											  methods[i][0].name);
+								}
+								
+								_out.push("=function(){");
+							}
+						}
+						
+						this.CurrentClass().Variables.push({
+							identifier: currentMethod.name,
+							properties: {},
+					
+							//Standard internal properties
+							"[[ReadOnly]]": false,
+							"[[DontEnum]]": false,
+							"[[DontDelete]]": !!currentMethod.private,
+					
+							//Non-standard internal properties
+							"[[Public]]": !!currentMethod.public,
+							"[[Private]]": !!currentMethod.private,
+							"[[Static]]": !!currentMethod.static,
+							"[[Protected]]": !!currentMethod.protected,
+							"[[ClassMember]]": true,
+							"[[MemberOf]]": this.currentClass,
+							"[[ClassId]]": this.CurrentClassScopeId()
+						});
+						
+						if (currentMethod.public) {
+							this.classes[this.CurrentClassScopeId()].publicMembers.push(currentMethod.name);
+						}
+						if (currentMethod.protected) {
+							this.classes[this.CurrentClassScopeId()].protectedMembers.push(currentMethod.name);
+						}
+						
 						if (methods[i][j].params.length) {
 							_out.push("if(arguments.length==");
 							_out.push(methods[i][j].params.length + ") {");
@@ -997,7 +1067,7 @@ compiler.prototype.compile = function (ast) {
 							_out.push("}");
 						}
 					}
-					_out.push("}");*/
+					_out.push("};");
 				}
 			}
 			
@@ -1173,7 +1243,9 @@ compiler.prototype.compile = function (ast) {
 			out.push(".Constructor.apply(this,[].slice.call(arguments))}");
 			
 			//Add semicolon for nested class expressions
-			if (ast.public || ast.private || ast.static || ast.protected) out.push(";");
+			if (ast.public || ast.private || ast.static || ast.protected) {
+				out.push(";");
+			}
 			
 			//Include static declarations
 			out.push(staticItems.join(""));

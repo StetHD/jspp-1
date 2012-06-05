@@ -448,7 +448,7 @@ class foo {
 	}
 }
 
-(class : foo {
+(class extends foo {
 	public function Constructor() {
 		return bar();
 	}
@@ -898,7 +898,7 @@ class foo {
 		}
 		
 		public function baz() {
-			return [this.bar(), this.bar(1)]
+			return [bar(), bar(1)]
 		}
 	}
 
@@ -940,9 +940,9 @@ class foo {
 		}
 	}
 
-	var _bar = new bar();
+	var _widget = new widget();
 
-	return _bar.baz();
+	return _widget.baz();
 })();
 </code>
 <code class="eval">
