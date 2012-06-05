@@ -241,6 +241,54 @@ foo.baz()
 </code>
 <code class="eval">
 (class {
+	private function bar() {
+		return true;
+	}
+	
+	public function Constructor() {
+		return bar();
+	}
+})()
+</code>
+<code>
+class foo {
+	private function bar() {
+		return 1;
+	}
+}
+
+bar
+</code>
+<code>
+class foo {
+	private function bar() {
+		return 1;
+	}
+}
+
+(class baz : foo {
+	public function Constructor() {
+		return bar();
+	}
+})()
+</code>
+<code>
+class foo {
+	private function bar() {
+		return true;
+	}
+	
+	static var baz = class {
+		public function Constructor() {
+			return bar();
+		}
+	};
+}
+
+foo.baz()
+</code>
+<code class="eval">
+(class {
 	public var bar = true;
 	
 	public function Constructor() {
@@ -281,6 +329,65 @@ class foo {
 
 (new foo).quux()
 </code>
+<code class="eval">
+(class {
+	public function bar() {
+		return true;
+	}
+	
+	public function Constructor() {
+		return bar();
+	}
+})()
+</code>
+<code>
+class foo {
+	public function bar() {
+		return true;
+	}
+}
+
+bar
+</code>
+<code class="eval">
+class foo {
+	public function bar() {
+		return true;
+	}
+}
+
+(class : foo {
+	public function Constructor() {
+		return bar();
+	}
+})()
+</code>
+<code class="eval">
+class foo {
+	public function bar() {
+		return true;
+	}
+	
+	class baz {
+		static var qux = bar();
+	}
+	
+	public function quux() {
+		return baz.qux;
+	}
+}
+
+(new foo).quux()
+</code>
+<code class="eval">
+(class {
+	protected var bar = true;
+	
+	public function Constructor() {
+		return bar;
+	}
+})()
+</code>
 <code>
 class foo {
 	protected var bar = true;
@@ -306,6 +413,56 @@ class foo {
 	class foo {
 		public function Constructor() {
 			return [bar];
+		}
+	}
+	
+	public function Constructor() {
+		return (new foo)[0];
+	}
+})()
+</code>
+<code class="eval">
+(class {
+	protected function bar() {
+		return true;
+	}
+	
+	public function Constructor() {
+		return bar();
+	}
+})()
+</code>
+<code>
+class foo {
+	protected function bar() {
+		return true;
+	}
+}
+
+bar
+</code>
+<code class="eval">
+class foo {
+	protected function bar() {
+		return true;
+	}
+}
+
+(class : foo {
+	public function Constructor() {
+		return bar();
+	}
+})()
+</code>
+<code class="eval">
+(class {
+	protected function bar() {
+		return true;
+	}
+	
+	class foo {
+		public function Constructor() {
+			return [bar()];
 		}
 	}
 	
@@ -730,6 +887,64 @@ class foo {
 <!--
 #######################METHOD OVERLOADING#######################
 -->
+<code class="eval">
+(function() {
+	class foo {
+		private function bar() {
+			return [true];
+		}
+		private function bar(x) {
+			return [false];
+		}
+		
+		public function baz() {
+			return [this.bar(), this.bar(1)]
+		}
+	}
+
+	var _foo = new foo();
+
+	return _foo.baz();
+})();
+</code>
+<code class="eval">
+(function() {
+	class foo {
+		public function bar() {
+			return [true];
+		}
+		public function bar(x) {
+			return [false];
+		}
+	}
+
+	var _foo = new foo();
+
+	return [_foo.bar(), _foo.bar(1)]
+})();
+</code>
+<code class="eval">
+(function() {
+	class foo {
+		protected function bar() {
+			return [true];
+		}
+		protected function bar(x) {
+			return [false];
+		}
+	}
+	
+	class widget extends foo {
+		public function baz() {
+			return [bar(), bar(1)]
+		}
+	}
+
+	var _bar = new bar();
+
+	return _bar.baz();
+})();
+</code>
 <code class="eval">
 class foo {
 	static function bar() {
@@ -1298,15 +1513,28 @@ test("Access Modifiers", function() {
 	raises(Function(code[i++]), ReferenceError, "Private variable cannot be accessed outside class");
 	raises(Function(code[i++]), ReferenceError, "Private variable cannot be accessed by subclass");
 	raises(Function(code[i++]), ReferenceError, "Private variable cannot be accessed by nested class");
+	equal(code[i++], true, "Private method can be accessed inside class");
+	raises(Function(code[i++]), ReferenceError, "Private method cannot be accessed outside class");
+	raises(Function(code[i++]), ReferenceError, "Private method cannot be accessed by subclass");
+	raises(Function(code[i++]), ReferenceError, "Private method cannot be accessed by nested class");
 	
 	equal(code[i++], true, "Public variable can be accessed inside class");
 	raises(Function(code[i++]), ReferenceError, "Public variable cannot be accessed outside class");
 	equal(code[i++], true, "Public variable can be accessed inside subclass");
 	equal(code[i++], true, "Public variable can be accessed inside nested class");
+	equal(code[i++], true, "Public method can be accessed inside class");
+	raises(Function(code[i++]), ReferenceError, "Public method cannot be accessed outside class");
+	equal(code[i++], true, "Public method can be accessed inside subclass");
+	equal(code[i++], true, "Public method can be accessed inside nested class");
 	
+	equal(code[i++], true, "Protected variable can be accessed inside class");
 	raises(Function(code[i++]), ReferenceError, "Protected variable cannot be accessed outside class");
 	equal(code[i++], true, "Protected variable can be accessed inside subclass");
 	equal(code[i++], true, "Protected variable can be accessed inside nested class");
+	equal(code[i++], true, "Protected method can be accessed inside class");
+	raises(Function(code[i++]), ReferenceError, "Protected method cannot be accessed outside class");
+	equal(code[i++], true, "Protected method can be accessed inside subclass");
+	equal(code[i++], true, "Protected method can be accessed inside nested class");
 	
 	equal(code[i++], true, "Function declarations (resolves even if declaration comes later) - Public");
 	equal(code[i++], true, "Function declarations (resolves even if declaration comes later) - Protected");
@@ -1352,7 +1580,10 @@ test("Constructors / Destructors", function() {
 });
 
 test("Method Overloading", function() {
-	deepEqual(code[i++], [[true], [false]], "Method Overloading");
+	deepEqual(code[i++], [[true], [false]], "Method Overloading - private Keyword");
+	deepEqual(code[i++], [[true], [false]], "Method Overloading - public Keyword");
+	deepEqual(code[i++], [[true], [false]], "Method Overloading - protected Keyword");
+	deepEqual(code[i++], [[true], [false]], "Method Overloading - static Keyword");
 	deepEqual(code[i++], [[true], [false]], "Constructor Overloading");
 });
 
