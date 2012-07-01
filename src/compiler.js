@@ -33,20 +33,20 @@ function compiler(ast, options) {
 	//};
 	this.options = options || { debug: true, warnings: true };
 	this.ast = ast;
-	
+
 	this.errors = [];
 	this.warnings = [];
 	this.NewWarning = function (e, node) {
 		if (!this.options.warnings) return false;
-		
+
 		if (node) {
 			e.line = node.lineno;
 		}
 		e.category = "Warning";
 		e.toString = function(){ return this.message.toString() };
-		
+
 		typeof console != "undefined" && console.log(e);
-		
+
 		this.warnings.push(e);
 	};
 	this.NewError = function (e, node) {
@@ -55,23 +55,23 @@ function compiler(ast, options) {
 		}
 		e.category = "Error";
 		e.toString = function(){ return this.message.toString() };
-		
+
 		typeof console != "undefined" && console.log(e);
-		
+
 		this.errors.push(e);
-		
+
 		throw e;
 	};
-	
+
 	this.lineno = -1; //Keep track of line numbers to compile debuggable code
-	
+
 	var VarPush = function(x) {
 		for (var i=0, len=this.length; i<len; i++) {
 			if (this[i].identifier === x.identifier) break;
 		}
 		i == len && Array.prototype.push.apply(this, Array.isArray(x) ? x : [x]);
 	};
-	
+
 	//Emulate execution contexts
 	this.ExecutionContexts = {};
 	this.ExecutionContextsArray = [];
@@ -86,37 +86,37 @@ function compiler(ast, options) {
 							"[[DontEnum]]": true
 						}
 					},
-					
-					"[[Prototype]]": Object.prototype,					
+
+					"[[Prototype]]": Object.prototype,
 					"[[ReadOnly]]": false,
 					"[[DontDelete]]": true
 				}
 			},
-			
+
 			//List of all variables declared in the execution context
 			Variables: [],
-			
+
 			//Internal state for next block variable identifier
 			NextBlockVariable: [97],
-			
+
 			//Save scoped object extensions
 			Extensions: []
 		});
-		
+
 		_this.ExecutionContexts[contextId].push = VarPush;
 	};
-	
+
 	this.context = null; //Current execution context
-	
+
 	this.GetContext = function(x) {
 		return this.context = this.ExecutionContexts[x];
 	};
-	
+
 	this.GetCurrentContext = function() {
 		return this.ExecutionContextsArray[this.ExecutionContextsArray.length-1] ||
 				this.ExecutionContextsArray[0];
 	};
-	
+
 	this.ExitContext = function() {
 		this.ExecutionContextsArray.pop();
 	};
@@ -127,32 +127,32 @@ function compiler(ast, options) {
 	this.ScopeId = "_bScope"; //Block scope temporary variable identifier
 	this.currentScope = 0;
 	this.StatementBlocks = 0; //e.g. if (1) let x = 10; <-- no block { ... } present
-	
+
 	this.NewScope = function(id, node) {
 		this.scopes[id] = node;
 		this.scopeChain.push(node);
 		this.currentScope = this.ScopeId + node.scopeId;
-		
+
 		node.Variables = [];
 		node.BlockVariables = [];
 		node.Functions = []; //Function declarations, not expressions
-		
+
 		node.Variables.push = node.BlockVariables.push = VarPush;
-		
+
 		/*node.Functions.push = function(x) {
 			for (var i=0, len=this.length; i<len; i++) {
 				if (this[i].name === x.name) break;
 			}
 			i == len && Array.prototype.push.apply(this, Array.isArray(x) ? x : [x]);
 		};*/
-		
+
 		//Map block scoped variable identifiers
 		//  oldIdentifier: newIdentifier
 		node.map_BlockVars = {};
-		
+
 		//Run the TypeCheck function to notify that we've created a new scope
 		this.TypeCheck(node);
-		
+
 		//If this is the global scope, push some declarations to avoid compiler warnings
 		if (this.scopeChain.length == 1) {
 			//Note: Include es3.js or this won't run
@@ -166,22 +166,22 @@ function compiler(ast, options) {
 				}, {lineno: -1});
 			}
 		}
-		
+
 		return this.scopeChain[this.scopeChain.length-1];
 	};
-	
+
 	this.ExitScope = function() {
 		if (typeof this.scopeChain[this.scopeChain.length-1].typesys != "undefined") {
 			this.typeSystems.pop();
 		}
-		
+
 		this.currentScope = this.ScopeId + this.scopeChain.pop().scopeId;
 	};
-	
+
 	this.CurrentScope = function() {
 		return this.scopeChain[this.scopeChain.length-1];
 	};
-	
+
 	this.CurrentFunction = function(currentScopeId) {
 		var currentScope;
 		if (currentScope = this.scopeChain[currentScopeId] || this.scopeChain[currentScopeId]) {
@@ -192,10 +192,10 @@ function compiler(ast, options) {
 				this.CurrentFunction(--currentScopeId);
 			}
 		}
-		
+
 		return null;
 	};
-	
+
 	//Handle "pseudo-blocks" e.g. for (;;) let x = 10; where there is no { ... }
 	this.NewPseudoBlock = function(out, generate, Node, Statement, inLoop) {
 		Node.scopeId = "Stmt" + (++this.StatementBlocks);
@@ -208,19 +208,19 @@ function compiler(ast, options) {
 		else {
 			out.push(generate(Statement));
 		}
-		
+
 		this.ExitScope();
 	};
-	
+
 	//Get the current scope based on regular JS scoping rules (nearest function or global only)
 	this.ScopeJS = function(currentScopeId) {
 		return this.CurrentFunction(currentScopeId) ||  this.scopeChain[0];
 	};
-	
+
 	this.isGlobalScope = function(x) {
 		return this.scopeChain.length === 1;
 	};
-	
+
 	this.typeSystem = null;
 	//this.conditionals - keeps track of conditionals
 	//useful for if (1) { var a as Number; } else { var a as String; }
@@ -228,7 +228,7 @@ function compiler(ast, options) {
 	this.TypeCheck = function(Node) {
 		this.typeSystem !== null && this.typeSystem.typesys(Node, this);
 	};
-	
+
 	//Traverses scope chain until findIdentifier is found starting at currentScopeId
 	this.LookupScopeChain = function (findIdentifier, currentScopeId, callback, property) {
 		var found = false, isBlockVariable = false, isClassMember = false, data;
@@ -241,29 +241,29 @@ function compiler(ast, options) {
 			if (Functions[i].name === findIdentifier) {
 				found = true;
 				isFunDecl = true;
-				
+
 				data = Functions[i];
-				
+
 				break;
 			}
 		}
-		
+
 		//Search variable declarations after function declarations
 		for (var i=0, len=Variables.length; i < len; i++) {
 			if (Variables[i].identifier === findIdentifier) {
 				found = true;
-				
+
 				if (Variables[i]["[[ClassMember]]"]) {
 					isClassMember = true;
 					classScopeId = Variables[i]["[[ClassId]]"];
 				}
-				
+
 				data = Variables[i];
-				
+
 				break;
 			}
 		}
-		
+
 		//Finally, check if this is a block scoped variable
 		if (currentScope.map_BlockVars.hasOwnProperty(findIdentifier)) {
 			found = true;
@@ -271,14 +271,14 @@ function compiler(ast, options) {
 			isClassMember = false;
 			data = currentScope.map_BlockVars[findIdentifier];
 		}
-		
+
 		//Keep moving up the chain until we find the variable
 		if (!found && currentScope !== _this.scopeChain[0]) {
 			_this.LookupScopeChain(findIdentifier, --currentScopeId, callback);
-						
+
 			return;
 		}
-		
+
 		if (found) {
 			typeof callback == "function" && callback({
 				found: true,
@@ -294,16 +294,16 @@ function compiler(ast, options) {
 			typeof callback == "function" && callback(false);
 		}
 	};
-	
+
 	//Create temporary variables
 	var tmpVarIndex = 0;
 	this.CreateTempVar = function() {
 		var tmp = "__TMP" + (++tmpVarIndex) + "__";
-		
+
 		while(~this.varCache.indexOf(tmp)) tmp = "__TMP" + (++tmpVarIndex) + "__";
-		
+
 		this.varCache.push(tmp);
-		
+
 		return tmp;
 	};
 	this.varCache = []; //Keep track of used identifiers - including lexically scoped vars
@@ -313,16 +313,16 @@ function compiler(ast, options) {
 	this.PushToVarCache = function(nodes) {
 		for (var i=0, item, len=nodes.length; i<len; i++) {
 			if (nodes[i].type == jsdef.LET) continue;
-			
+
 			for (item in nodes[i]) {
 				if (!isFinite(item)) continue;
-			
+
 				if (nodes[i][item].type == jsdef.IDENTIFIER) //In case of destructuring assignments
 					this.varCache.push(nodes[i][item].value);
 			}
 		}
 	};
-	
+
 	//Reduce functions
 	this.reduceVarInit = function(node) {
 		switch(node.type) {
@@ -338,7 +338,7 @@ function compiler(ast, options) {
 				break;
 		}
 	};
-	
+
 	//Types
 	//Define default values
 	this.types = {
@@ -369,7 +369,7 @@ function compiler(ast, options) {
 		"String": {
 			"default": '""'
 		},
-		
+
 		//Typed arrays
 		"Array[]": {
 			"default": "[]"
@@ -417,16 +417,16 @@ function compiler(ast, options) {
 			case "TypeError":
 			case "URIError":
 				return CreateGlobal.Error.properties.prototype;
-				
+
 			//TODO: Typed arrays
 		}
 	};
-	
+
 	this.currentLabel = ""; //Labels for loops
 	this.breakStmt = ""; //Track break statements
 	this.continueStmt = ""; //Track continue statements
 	this.inCase = false; //Are we inside a case/default statement?
-	
+
 	//Classes
 	this.currentClass = "";
 	this.classId = "";
@@ -434,11 +434,11 @@ function compiler(ast, options) {
 	this.classScopes = [];
 	this.classes = {};
 	this.classVars = [];
-	
+
 	this.NewClass = function(Node) {
 		this.currentClass = Node.name || "";
 		this.classScope = this.classScopes.push(this.NewScope(Node.scopeId, Node));
-		
+
 		this.classes[Node.body.scopeId] = {
 			id: Node.name,
 			__SUPER__: Node.extends || "",
@@ -446,31 +446,31 @@ function compiler(ast, options) {
 			publicMembers: []
 		};
 	};
-	
+
 	this.CurrentClass = function() {
 		return this.classScopes[this.classScopes.length-1];
 	};
-	
+
 	this.CurrentClassName = function() {
 		return this.classScopes[this.classScopes.length-1].name;
 	};
-	
+
 	this.ChainedClassName = function() {
 		var ret = [];
-		
+
 		for (var i=0, k=this.classScopes, len=k.length; i<len; i++) {
 			ret.push(k[i].name);
 		}
-		
+
 		return ret;
 	};
-	
+
 	this.AdjustedChainedClassName = function() {
 		//Are we inside a static class expression?
 		for (var i=0,k=this.classScopes,len=k.length;i<len;i++) {
 			if (k[i].static) break;
 		}
-		
+
 		if (this.classScopes.length > 1 && i === k.length) {
 			return this.CurrentClassName();
 		}
@@ -478,22 +478,22 @@ function compiler(ast, options) {
 			return this.ChainedClassName().join(".");
 		}
 	};
-	
+
 	this.CurrentClassScopeId = function() {
 		return this.classScopes[this.classScopes.length-1].body.scopeId;
 	};
-	
+
 	this.InsideClass = function() {
-		return this.scopeChain[this.scopeChain.length-1] && 
+		return this.scopeChain[this.scopeChain.length-1] &&
 			   this.scopeChain[this.scopeChain.length-1].type == jsdef.CLASS;
 	};
-	
+
 	this.InsideStaticMember = function() {
-		return this.classVars.length && 
+		return this.classVars.length &&
 				(!!this.classVars[this.classVars.length-1].static ||
 				 !!this.classVars[this.classVars.length-1].body.static);
 	};
-	
+
 	this.ExitClass = function() {
 		this.currentClass = "";
 		this.classMembers = {};
@@ -509,7 +509,7 @@ compiler.prototype.compile = function (ast) {
 	var generate = function(){
 		return _this.compile.apply(_this, Array.prototype.slice.call(arguments,0));
 	};
-	
+
 	if (this.options.debug && ast.lineno != this.lineno) {
 		this.lineno != -1 && out.push("\n");
 		out.push("\/\/@line " + ast.lineno + "\n");
@@ -523,15 +523,15 @@ compiler.prototype.compile = function (ast) {
 			this.CreateExecutionContext(ast.contextId);
 			context = this.GetContext(ast.contextId);
 			this.NewScope(ast.scopeId, ast);
-			
+
 			var isGlobalScope = this.isGlobalScope();
-			
+
 			if (isGlobalScope) {
 				this.PushToVarCache(ast.varDecls);
 				if (!this.options.nowrap) {
 					out.push("(function(){var global=this;");
 				}
-				
+
 				//If we plugged in a type system, declare the conversion functions
 				if (this.typeSystem !== null) {
 					out.push("var ArrayArray=Array,");
@@ -548,85 +548,85 @@ compiler.prototype.compile = function (ast) {
 					out.push("StringArray=function(){for(var i=arguments.length-1;i>=0;i--)arguments[i]=arguments[i]+'';return [].slice.call(arguments)};");
 				}
 			}
-			
+
 			//Handle function declarations
 			var scope = this.CurrentScope();
 			for (var i=0, len=ast.funDecls.length; i<len; i++) {
 				scope.Functions.push(ast.funDecls[i]);
 			}
-			
+
 			if (Array.isArray(ast.params)) {
 				var id = "", varObj = {};
-				
+
 				for (var i=0, len=ast.params.length; i<len; i++) {
 					varObj = {
 						identifier: id = ast.params[i],
 						value: undefined,
 						properties: {},
-						
+
 						//Internal properties
 						"[[ReadOnly]]": false,
 						"[[DontEnum]]": false,
 						"[[DontDelete]]": true
 					};
-					
+
 					context.ActivationObject.arguments.value[id] = undefined;
 					context.ActivationObject.arguments.length++;
 					context.Variables.push(varObj);
 					this.CurrentScope().Variables.push(varObj);
 				}
 			}
-			
+
 			//Loop variable declarations to find conflicting identifiers
 			for (var i=0, len=ast.varDecls.length; i<len; i++) {
 				if (ast.varDecls[i].type === jsdef.IDENTIFIER) {
 					while (ast.varDecls[i].value === this.currentScope) {
 						this.currentScope = "_" + this.ScopeId;
 					}
-					
+
 					context.Variables.push(ast.varDecls[i].value);
 				}
 			}
-			
+
 			var body = [];
 			out.push("var " + this.currentScope + "={};");
-			
+
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-				
+
 				ast[item].parent = this.context;
 				body.push(generate(ast[item]));
 			}
 			out = out.concat(body);
-			
+
 			//Delete scoped object extensions
 			for (var i=0, len=context.Extensions.length; i<len; i++) {
 				out.push("delete " + context.Extensions[i] + ";");
 			}
-			
+
 			if (isGlobalScope) {
 				!this.options.nowrap && out.push("}).call();");
 				this.varCache = null;
 			}
-			
+
 			this.ExitScope();
 			this.ExitContext();
-			
+
 			break;
 		case jsdef.BLOCK:
 			this.NewScope(ast.scopeId, ast);
-			
+
 			out.push("{");
 			!ast.isLoop && out.push("var " + this.currentScope + "={};");
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-				
+
 				ast[item].parent = this.context;
-				
+
 				out.push(generate(ast[item]));
 			}
 			!ast.isLoop && out.push(this.currentScope + "=null;");
-			
+
 			if (this.inCase) { //inside a case/default statement?
 				if (this.breakStmt) {
 					out.push(this.breakStmt);
@@ -637,13 +637,13 @@ compiler.prototype.compile = function (ast) {
 					this.continueStmt = "";
 				}
 			}
-			
+
 			out.push("}");
-			
+
 			this.ExitScope();
-			
+
 			break;
-			
+
 		//Classes
 		case jsdef.CLASS:
 			var constructor = [],
@@ -654,9 +654,9 @@ compiler.prototype.compile = function (ast) {
 				currentItem,
 				duplicates = [],
 				privateMembers = []; //Check for re-declarations of vars/functions
-			
+
 			this.NewClass(ast);
-			
+
 			//If this is a subclass, get the superclass data
 			if (ast.extends) {
 				var j, superClass, superClassId;
@@ -669,13 +669,13 @@ compiler.prototype.compile = function (ast) {
 					}
 				}
 			}
-			
+
 			//Find constructors/destructor
 			for (var item in ast.body) {
 				if (!isFinite(item)) continue;
-				
+
 				currentItem = ast.body[item];
-				
+
 				if (currentItem.type === jsdef.FUNCTION) {
 					if (currentItem.name == "Constructor" ||
 						currentItem.name == null || currentItem.name === "") {
@@ -687,8 +687,8 @@ compiler.prototype.compile = function (ast) {
 												"detected for " + ast.name
 								}, ast);
 							}
-							
-							if (currentItem.private || currentItem.public || 
+
+							if (currentItem.private || currentItem.public ||
 								currentItem.protected) {
 								this.NewWarning({
 									type: SyntaxError,
@@ -696,19 +696,19 @@ compiler.prototype.compile = function (ast) {
 												"have access modifiers"
 								}, ast);
 							}
-							
+
 							if (currentItem.params && currentItem.params.length) {
 								this.NewWarning({
 									type: SyntaxError,
 									message: "Static constructors cannot " +
 												"have parameters"
 								}, ast);
-								
+
 								currentItem.params = [];
 								currentItem.paramsList = [];
 							}
 						}
-						
+
 						if (currentItem.static) {
 							staticConstructor.push(currentItem);
 						}else {
@@ -724,8 +724,8 @@ compiler.prototype.compile = function (ast) {
 											ast.name
 							}, ast);
 						}
-						
-						/* 
+
+						/*
 						 * Throw warning for non-static destructors
 						 * Unlike other languages (C++, C#), destructors
 						 * must be static for us to access it.
@@ -745,7 +745,7 @@ compiler.prototype.compile = function (ast) {
 								message: "Destructors cannot have access modifiers"
 							}, ast);
 						}
-						
+
 						destructor.push(currentItem);
 					}
 					else {
@@ -755,32 +755,32 @@ compiler.prototype.compile = function (ast) {
 							for (var i=0, len=methods[currentItem.name].length;
 									i<len;
 									i++) {
-								if (methods[currentItem.name][i].params.length === 
+								if (methods[currentItem.name][i].params.length ===
 									currentItem.params.length) {
-									
+
 									for (var j=0,
 										_len=methods[currentItem.name][i].paramsList.length;
 										j<_len;
 										j++) {
-										
+
 										if (methods[currentItem.name][i].paramsList[j].vartype !=
 											currentItem.paramsList[j].vartype)
 											break;
 									}
-									
+
 									if (j == _len) {
 										this.NewError({
 											type: SyntaxError,
 											message: "Method '" + currentItem.name +
 														"' has already been defined in " +
-														"class '" + this.currentClass + 
+														"class '" + this.currentClass +
 														"'. Rename this member or use " +
 														"different parameters."
 										}, ast);
 									}
 								}
 							}
-							
+
 							methods[currentItem.name].push(currentItem);
 						}
 						//No overloading
@@ -789,29 +789,29 @@ compiler.prototype.compile = function (ast) {
 						}
 						classItems.push(currentItem);
 					}
-					
-					!~duplicates.indexOf(currentItem.name) && 
+
+					!~duplicates.indexOf(currentItem.name) &&
 						duplicates.push(currentItem.name);
-						
+
 					//Push methods to classMembers first in case "var"
 					//statements rewrite our function declarations later
 					this.classMembers[currentItem.name] = currentItem;
-					
+
 					//Push to private members
 					privateMembers.push(currentItem.name);
-					
+
 					//For method declarations (and not method expressions), we
 					//should push the declaration to the "Variables" object so
 					//identifier resolution will resolve properly
 					this.CurrentClass().Variables.push({
 						identifier: currentItem.name,
 						properties: {},
-					
+
 						//Standard internal properties
 						"[[ReadOnly]]": false,
 						"[[DontEnum]]": false,
 						"[[DontDelete]]": !!currentItem.private,
-					
+
 						//Non-standard internal properties
 						"[[Public]]": !!currentItem.public,
 						"[[Private]]": !!currentItem.private,
@@ -821,7 +821,7 @@ compiler.prototype.compile = function (ast) {
 						"[[MemberOf]]": this.currentClass,
 						"[[ClassId]]": this.CurrentClassScopeId()
 					});
-				
+
 					if (ast.public) {
 						this.classes[this.CurrentClassScopeId()].publicMembers.push(currentItem.name);
 					}
@@ -831,16 +831,16 @@ compiler.prototype.compile = function (ast) {
 				}
 				else {
 					classItems.push(currentItem);
-					
+
 					if (currentItem.type == jsdef.VAR) {
 						if (currentItem.private) {
 							for (var varNode in currentItem) {
 								if (!isFinite(varNode)) continue;
-							
+
 								privateMembers.push(currentItem[varNode].value);
 							}
 						}
-						
+
 						//Save variable declaration early for identifier resolution
 						//We don't actually do any code generation here
 						//This is to ensure when we process method declarations
@@ -848,16 +848,16 @@ compiler.prototype.compile = function (ast) {
 						var id = "";
 						for (var varDecl in currentItem) {
 							if (!isFinite(varDecl)) continue;
-							
+
 							this.CurrentClass().Variables.push(varObject = {
 								identifier: id = currentItem[varDecl].value,
 								properties: {},
-					
+
 								//Standard internal properties
 								"[[ReadOnly]]": false,
 								"[[DontEnum]]": false,
 								"[[DontDelete]]": true,
-					
+
 								//Non-standard internal properties
 								"[[Type]]": currentItem[varDecl].vartype,
 								"[[Public]]": !!currentItem.public,
@@ -868,7 +868,7 @@ compiler.prototype.compile = function (ast) {
 								"[[MemberOf]]": this.currentClass,
 								"[[ClassId]]": this.CurrentClassScopeId()
 							});
-					
+
 							if (ast.public) {
 								this.classes[this.CurrentClassScopeId()].publicMembers.push(id);
 							}
@@ -891,40 +891,40 @@ compiler.prototype.compile = function (ast) {
 			out.push("var __SUPER__" +
 					 (superClassId !== void 0 ? ",__CLASS" + superClassId + "__" : "") +
 					 ";");
-			
+
 			if (ast.nestedParent) {
 				//Static class expressions
 				if (ast.classForm && ast.static) {
-					/*out.push("var __CLASS" + ast.nestedParent.body.scopeId + 
+					/*out.push("var __CLASS" + ast.nestedParent.body.scopeId +
 								"__=__CLASSES__[" + ast.nestedParent.body.scopeId + "];");*/
 				}
 				else {
 					//Cleanup
 					for (var i=0, len=ast.nestedParent.privateMembers.length;
 							i<len; i++) {
-						if (typeof ast.nestedParent.privateMembers[i] == 
+						if (typeof ast.nestedParent.privateMembers[i] ==
 							"undefined") {
 							ast.nestedParent.privateMembers.splice(i,1);
 						}
 					}
-						
+
 					//If this is a nested non-static class, we need to redeclare all private
 					//variables of the superclass.  Unfortunately, this causes issues
 					//with ReferenceErrors because it's technically defined according
 					//to the activation object, but we can't "delete" variables that have
 					//the internal [[DontDelete]] flag
-					if (ast.nestedParent.privateMembers.length) {						
+					if (ast.nestedParent.privateMembers.length) {
 						out.push("var " + ast.nestedParent.privateMembers.join(",") + ";");
 					}
 				}
 			}
-			
+
 			out.push("return ((function(){");
-			
+
 			//Store protected variables, regular "var" declarations don't
 			//work for nested classes
 			var classId = this.classId = "__CLASS" + ast.body.scopeId + "__";
-			
+
 			out.push("var " + classId + "=this,");
 			//Don't use "Object" to avoid identifier lookup
 			out.push("__PDEFINE__={}.constructor.defineProperty,");
@@ -938,7 +938,7 @@ compiler.prototype.compile = function (ast) {
 			out.push("__PDEFINE__&&__PDEFINE__(this,'__SUPER__',__NOENUM__);");
 			out.push("this.__PROTECTED__={};");
 			out.push("__PDEFINE__&&__PDEFINE__(this,'__PROTECTED__',__NOENUM__);");
-			
+
 			//Push methods - we do this separately in case of overloading
 			//Methods should come first to make class method declarations behave
 			//like JS function declarations
@@ -947,35 +947,35 @@ compiler.prototype.compile = function (ast) {
 				//Method is not overloaded, just push it
 				if (methods[i].length == 1) {
 					this.classVars.push(currentMethod = methods[i][0]);
-					
+
 					_out = (currentMethod.static && !currentMethod.private && !currentMethod.protected) ?
 							((currentMethod.body.static = true), staticItems) : out;
 					_out.push(generate(methods[i].shift()));
-					
+
 					if (currentMethod.public) {
 						this.classes[this.CurrentClassScopeId()].publicMembers.push(currentMethod.name);
 					}
 					if (currentMethod.protected) {
 						this.classes[this.CurrentClassScopeId()].protectedMembers.push(currentMethod.name);
 					}
-					
+
 					this.classVars.pop();
 				}
 				//Overloaded method
 				else {
 					var firstVar = true,
 						currentMethod;
-					
+
 					for (var j = 0, _len = methods[i].length; j < _len; j++) {
 						currentMethod = methods[i][j];
-						
+
 						//public static methods
 						if (currentMethod.static && !currentMethod.private &&
 							!currentMethod.protected) {
-							
+
 							currentMethod.body.static = true;
 							_out = staticItems;
-							
+
 							//Create the header for overloaded method
 							if (j == 0) {
 								_out.push(ast.name + "." + methods[i][0].name);
@@ -985,7 +985,7 @@ compiler.prototype.compile = function (ast) {
 						//public, private, protected methods
 						else {
 							_out = out;
-							
+
 							if (j == 0) {
 								//public methods
 								if (currentMethod.public) {
@@ -1000,20 +1000,20 @@ compiler.prototype.compile = function (ast) {
 									_out.push("this.__PROTECTED__." +
 											  methods[i][0].name);
 								}
-								
+
 								_out.push("=function(){");
 							}
 						}
-						
+
 						this.CurrentClass().Variables.push({
 							identifier: currentMethod.name,
 							properties: {},
-					
+
 							//Standard internal properties
 							"[[ReadOnly]]": false,
 							"[[DontEnum]]": false,
 							"[[DontDelete]]": !!currentMethod.private,
-					
+
 							//Non-standard internal properties
 							"[[Public]]": !!currentMethod.public,
 							"[[Private]]": !!currentMethod.private,
@@ -1023,39 +1023,39 @@ compiler.prototype.compile = function (ast) {
 							"[[MemberOf]]": this.currentClass,
 							"[[ClassId]]": this.CurrentClassScopeId()
 						});
-						
+
 						if (currentMethod.public) {
 							this.classes[this.CurrentClassScopeId()].publicMembers.push(currentMethod.name);
 						}
 						if (currentMethod.protected) {
 							this.classes[this.CurrentClassScopeId()].protectedMembers.push(currentMethod.name);
 						}
-						
+
 						if (methods[i][j].params.length) {
 							_out.push("if(arguments.length==");
 							_out.push(methods[i][j].params.length + ") {");
 							_out.push("var ");
 							for (var k=0,__len=methods[i][j].paramsList.length;k<__len;k++) {
 								if (!firstVar) _out.push(",");
-							
+
 								_out.push(methods[i][j].paramsList[k].value);
-							
+
 								if (methods[i][j].paramsList[k].initializer) {
-									_out.push("=arguments[" + k + "]!==undefined?" + 
+									_out.push("=arguments[" + k + "]!==undefined?" +
 										"arguments[" + k + "]:" +
 										generate(methods[i][j].paramsList[k].initializer));
 								}
 								else {
-									_out.push("=arguments[" + k + "]!==undefined?" + 
-										"arguments[" + k + "]" + 
+									_out.push("=arguments[" + k + "]!==undefined?" +
+										"arguments[" + k + "]" +
 										":undefined");
 								}
-							
+
 								_out.push(";");
 								_out.push(generate(methods[i][j].body));
 								_out.push(this.currentScope + "=null;");
 								_out.push("}");
-							
+
 								firstVar = false;
 							}
 							firstVar = true;
@@ -1070,23 +1070,23 @@ compiler.prototype.compile = function (ast) {
 					_out.push("};");
 				}
 			}
-			
+
 			//Class body
 			var currentClassItem, currentVar;
 			for (var i=0, len=classItems.length; i<len; i++) {
 				if (classItems[i].type == jsdef.VAR) {
 					for (var varObject in classItems[i]) {
 						currentVar = classItems[i][varObject];
-						
+
 						if (!isFinite(varObject)) continue;
-						
+
 						//Check for method re-declarations as variables
 						if (~duplicates.indexOf(currentVar.name)) {
 							this.NewWarning({
 								type: SyntaxError,
 								message: "Redeclaration of method " + currentVar.name
 							}, ast);
-							
+
 							//Overwrite due to re-declaration
 							//Don't delete to prevent overwritten method being
 							//pushed to staticItems
@@ -1105,23 +1105,23 @@ compiler.prototype.compile = function (ast) {
 											classItems[i][varObject].name
 							}, ast);
 						}
-						
+
 						//Push to classMembers after function declarations
 						//have already been pushed in case var declarations
 						//redeclare identifiers used for function declarations
 						this.classMembers[currentVar.name] = currentVar;
 					}
 				}
-				
+
 				if (classItems[i].static && !classItems[i].private &&
 					!classItems[i].protected && !methods.hasOwnProperty(classItems[i].name)) {
-											
+
 					if (ast.name) {
 						this.classVars.push(ast);
-						
-						staticItems.push((classItems[i].type == jsdef.FUNCTION ? 
+
+						staticItems.push((classItems[i].type == jsdef.FUNCTION ?
 										ast.name : "") + generate(classItems[i]));
-										
+
 						this.classVars.pop();
 					}
 					else {
@@ -1136,17 +1136,17 @@ compiler.prototype.compile = function (ast) {
 					out.push(generate(classItems[i]));
 				}
 			}
-			
+
 			//Define the constructor and destructor last
-			
+
 			//Constructors
 			if (constructor.length) {
 				//Single constructor
 				if (constructor.length == 1) {
 					constructor = constructor.pop();
-					
+
 					out.push("this.Constructor=function(){");
-					
+
 					for (var i=0,len=constructor.paramsList.length;i<len;i++) {
 						out.push("var " + constructor.paramsList[i].name +
 								 "=arguments[" + i + "]");
@@ -1157,7 +1157,7 @@ compiler.prototype.compile = function (ast) {
 						out.push(";");
 					}
 					out.push(generate(constructor.body));
-					
+
 					out.push("return " + classId + "};");
 				}
 				//Overloaded constructor
@@ -1171,20 +1171,20 @@ compiler.prototype.compile = function (ast) {
 							out.push("var ");
 							for (var j=0,_len=constructor[i].paramsList.length;j<_len;j++) {
 								if (!firstVar) out.push(",");
-							
+
 								out.push(constructor[i].paramsList[j].value);
-							
+
 								if (constructor[i].paramsList[j].initializer) {
-									out.push("=arguments[" + j + "]!==undefined?" + 
+									out.push("=arguments[" + j + "]!==undefined?" +
 										"arguments[" + j + "]:" +
 										generate(constructor[i].paramsList[j].initializer));
 								}
 								else {
-									out.push("=arguments[" + j + "]!==undefined?" + 
-										"arguments[" + j + "]" + 
+									out.push("=arguments[" + j + "]!==undefined?" +
+										"arguments[" + j + "]" +
 										":undefined");
 								}
-									
+
 								firstVar = false;
 							}
 							out.push(";");
@@ -1208,7 +1208,7 @@ compiler.prototype.compile = function (ast) {
 				out.push("this.Constructor=function(){return " + classId + "};");
 			}
 			out.push("__PDEFINE__&&__PDEFINE__(this,'Constructor',__NOENUM__);");
-			
+
 			//Destructor
 			if (destructor) {
 				out.push((ast.name || "") + ".Destructor=function(){");
@@ -1216,21 +1216,21 @@ compiler.prototype.compile = function (ast) {
 				out.push("};");
 				out.push("__PDEFINE__&&__PDEFINE__(this,'Destructor',__NOENUM__);");
 			}
-			
+
 			//Run static constructor last
 			if (staticConstructor) {
 				out.push("(function(){");
 				out.push(generate(staticConstructor.body));
 				out.push("}).call(this);");
 			}
-			
+
 			out.push("return this");
-			
+
 			out.push("}).call(");
-			
+
 			if (ast.extends) {
 				out.push("(function(o){return (F.prototype=__SUPER__=" +
-						 (superClassId !== void 0 ? "__CLASS" + superClassId + "__=" : "") + 
+						 (superClassId !== void 0 ? "__CLASS" + superClassId + "__=" : "") +
 						 "o,new F);function F(){}})(" +
 						 "new " + ast.extends + ")");
 			}
@@ -1238,28 +1238,28 @@ compiler.prototype.compile = function (ast) {
 				out.push("{}");
 			}
 			out.push("))");
-			
+
 			//Call the constructor
 			out.push(".Constructor.apply(this,[].slice.call(arguments))}");
-			
+
 			//Add semicolon for nested class expressions
 			if (ast.public || ast.private || ast.static || ast.protected) {
 				out.push(";");
 			}
-			
+
 			//Include static declarations
 			out.push(staticItems.join(""));
-			
+
 			this.ExitClass();
-			
+
 			break;
-			
+
 		//Groups
 		case jsdef.GROUP:
 			out.push("(");
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-					
+
 				out.push(generate(ast[item]));
 			}
 			out.push(")");
@@ -1268,20 +1268,20 @@ compiler.prototype.compile = function (ast) {
 			var firstItem = true;
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-				
+
 				if (!firstItem) out.push(",");
-				
+
 				out.push(generate(ast[item]));
-				
+
 				firstItem = false;
 			}
 			break;
-			
+
 		//Functions
 		case jsdef.FUNCTION:
 			this.TypeCheck(ast);
 			this.PushToVarCache(ast.body.varDecls);
-			
+
 			if (ast.static) {
 				if (!ast.name) {
 					this.NewWarning({
@@ -1289,7 +1289,7 @@ compiler.prototype.compile = function (ast) {
 						message: "Missing method identifier"
 					}, ast);
 				}
-				
+
 				if (ast.private) {
 					if (!ast.reduced) {
 						out.push("var " + ast.name + "=function(");
@@ -1312,7 +1312,7 @@ compiler.prototype.compile = function (ast) {
 						message: "Missing method identifier"
 					}, ast);
 				}
-				
+
 				if (!ast.reduced) {
 					out.push("var " + ast.name + "=function(");
 				}
@@ -1327,7 +1327,7 @@ compiler.prototype.compile = function (ast) {
 						message: "Missing method identifier"
 					}, ast);
 				}
-				
+
 				out.push("this.__PROTECTED__." + ast.name + "=function(");
 			}
 			else if (ast.public) {
@@ -1337,16 +1337,16 @@ compiler.prototype.compile = function (ast) {
 						message: "Missing method identifier"
 					}, ast);
 				}
-				
+
 				out.push("this." + ast.name + "=function(");
 			}
 			else {
 				out.push("function" + (ast.name ? (" " + ast.name) : "") + "(");
 			}
-			
+
 			out.push(ast.params.join(","));
 			out.push("){");
-			
+
 			//Default parameters
 			var defParams = [];
 			for (var i=0, len=ast.paramsList.length; i<len; i++) {
@@ -1363,29 +1363,29 @@ compiler.prototype.compile = function (ast) {
 				}
 			}
 			out = out.concat(defParams);
-			
+
 			ast.body.params = ast.params;
 			ast.body.isFunction = true;
 			ast.body.returntype = ast.returntype;
 			var funcBody = generate(ast.body);
-			
+
 			//Convert "arguments" object to array ONLY if it's used in function body
 			if (ast.body.usesArgs) {
 				out.push("var args=[].slice.call(arguments);");
 			}
-			
+
 			out.push(funcBody);
-			
+
 			if (this.types.hasOwnProperty(ast.returntype)) {
 				out.push("return " + this.types[ast.returntype]["default"]);
 			}
-			
+
 			out.push("}");
 			if (!ast.reduced &&
 				(ast.public || ast.private || ast.static || ast.protected)) {
 				out.push(";");
 			}
-			
+
 			break;
 		case jsdef.CALL:
 			out.push(generate(ast[0]));
@@ -1404,15 +1404,15 @@ compiler.prototype.compile = function (ast) {
 			var firstItem = true;
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-				
+
 				if (!firstItem) out.push(",");
-				
+
 				out.push(generate(ast[item]));
-				
+
 				firstItem = false;
 			}
 			break;
-			
+
 		//Conditionals
 		case jsdef.IF:
 			out.push("if(");
@@ -1437,10 +1437,10 @@ compiler.prototype.compile = function (ast) {
 			break;
 		case jsdef.SWITCH:
 			out.push("switch(" + generate(ast.discriminant) + "){");
-			
+
 			for (var _case in ast.cases) {
 				if (!isFinite(_case)) continue;
-				
+
 				out.push(generate(ast.cases[_case]));
 			}
 			out.push("}");
@@ -1448,46 +1448,46 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.CASE:
 			this.inCase = true;
 			out.push("case " + generate(ast.caseLabel) + ":");
-			
+
 			ast.statements.scopeId = "Stmt" + (++this.StatementBlocks);
 			this.NewScope(ast.statements.scopeId, Node);
-		
-			if (ast.statements && ast.statements[0] && 
+
+			if (ast.statements && ast.statements[0] &&
 				ast.statements[0].value && ast.statements[0].value != ":") {
 				out.push(generate(ast.statements));
 			}
 			this.inCase = false;
 			this.ExitScope();
-			
+
 			break;
 		case jsdef.DEFAULT:
 			this.inCase = true;
 			out.push("default:");
-			
+
 			ast.statements.scopeId = "Stmt" + (++this.StatementBlocks);
 			this.NewScope(ast.statements.scopeId, Node);
-			
-			if (ast.statements && ast.statements[0] && 
+
+			if (ast.statements && ast.statements[0] &&
 				ast.statements[0].value && ast.statements[0].value != ":") {
 				out.push(generate(ast.statements));
 			}
 			this.inCase = false;
 			this.ExitScope();
-			
+
 			break;
-			
+
 		//Loops
 		case jsdef.FOR:
 			ast.scopeId = "Stmt" + (++this.StatementBlocks);
 			this.NewScope(ast.scopeId, ast);
-			
-			var setupFor = ast.setup ? generate(ast.setup) : ";";			
+
+			var setupFor = ast.setup ? generate(ast.setup) : ";";
 			ast.body.isLoop = true;
-			
+
 			if (ast.body.scopeId) out.push("var " + this.ScopeId + ast.body.scopeId + "={};");
-			
+
 			out.push("var " + this.ScopeId + "Stmt" + (this.StatementBlocks) + "={};");
-			
+
 			if (ast.setup && ast.setup.type == jsdef.LET) {
 				out.push(setupFor + this.currentLabel + "for(;");
 			}else {
@@ -1498,36 +1498,36 @@ compiler.prototype.compile = function (ast) {
 			}
 			out.push((ast.condition ? generate(ast.condition) : "") + ";");
 			out.push((ast.update ? generate(ast.update) : "") + ")");
-			
+
 			if (ast.body.type == jsdef.LET) {
 				out.push("{" + generate(ast.body) + "}");
 			}
 			else {
 				out.push(generate(ast.body));
 			}
-			
+
 			out.push(this.ScopeId + "Stmt" + (this.StatementBlocks) + "=null;");
-		
+
 			this.ExitScope();
-			
+
 			break;
 		case jsdef.FOR_IN:
 			ast.scopeId = "Stmt" + (++this.StatementBlocks);
 			this.NewScope(ast.scopeId, ast);
-					
+
 			ast.body.isLoop = true;
-			
+
 			if (ast.body.scopeId) out.push("var " + this.ScopeId + ast.body.scopeId + "={};");
-			
+
 			out.push("var " + this.ScopeId + "Stmt" + (this.StatementBlocks) + "={};");
-			
+
 			if (ast.iterator.type == jsdef.LET) {
 				out.push(generate(ast.iterator) + this.currentLabel + "for(" + this.ScopeId + "Stmt" + (this.StatementBlocks));
 				out.push("." + this.CurrentScope().map_BlockVars[ast.iterator[0].value]);
 			}
 			else if (ast.iterator.type == jsdef.VAR || ast.iterator.type == jsdef.IDENTIFIER) {
-				out.push(this.currentLabel + "for(" + 
-							(ast.iterator.type == jsdef.VAR ? 
+				out.push(this.currentLabel + "for(" +
+							(ast.iterator.type == jsdef.VAR ?
 								"var " + ast.iterator[0].value :
 								ast.iterator.value
 							)
@@ -1540,39 +1540,39 @@ compiler.prototype.compile = function (ast) {
 				}, ast);
 			}
 			out.push(" in " + (ast.object ? generate(ast.object) : "") + ")");
-			
+
 			if (ast.body.type == jsdef.LET) {
 				out.push("{" + generate(ast.body) + "}");
 			}
 			else {
 				out.push(generate(ast.body));
 			}
-			
+
 			out.push(this.ScopeId + "Stmt" + (this.StatementBlocks) + "=null;");
-		
+
 			this.ExitScope();
-			
+
 			break;
 		case jsdef.FOR_INSIDE:
 			ast.scopeId = "Stmt" + (++this.StatementBlocks);
 			this.NewScope(ast.scopeId, ast);
-			
+
 			var identifier = "";
-					
+
 			ast.body.isLoop = true;
-			
+
 			if (ast.body.scopeId) out.push("var " + this.ScopeId + ast.body.scopeId + "={};");
-			
+
 			out.push("var " + this.ScopeId + "Stmt" + (this.StatementBlocks) + "={};");
-			
+
 			if (ast.iterator.type == jsdef.LET) {
 				out.push(generate(ast.iterator) + this.currentLabel + "for(" +
 							this.ScopeId + "Stmt" + (this.StatementBlocks));
 				out.push("." + this.CurrentScope().map_BlockVars[identifier = ast.iterator[0].value]);
 			}
 			else if (ast.iterator.type == jsdef.VAR || ast.iterator.type == jsdef.IDENTIFIER) {
-				out.push(this.currentLabel + "for(" + 
-							(ast.iterator.type == jsdef.VAR ? 
+				out.push(this.currentLabel + "for(" +
+							(ast.iterator.type == jsdef.VAR ?
 								"var " + (identifier=ast.iterator[0].value) :
 								(identifier=ast.iterator.value)
 							)
@@ -1587,7 +1587,7 @@ compiler.prototype.compile = function (ast) {
 			var tmp = this.CreateTempVar();
 			out.push(" in " + tmp + "=");
 			out.push((ast.object ? generate(ast.object) : "") + ")");
-			
+
 			out.push("if(Object.prototype.hasOwnProperty.call(" + tmp + ",");
 			if (ast.iterator.type == jsdef.LET) {
 				out.push(this.ScopeId + "Stmt" + (this.StatementBlocks) + ".");
@@ -1597,27 +1597,27 @@ compiler.prototype.compile = function (ast) {
 				out.push(identifier);
 			}
 			out.push(")){" + generate(ast.body) + "}");
-			
+
 			out.push(this.ScopeId + "Stmt" + (this.StatementBlocks) + "=null;");
-		
+
 			this.ExitScope();
-			
+
 			break;
 		case jsdef.WHILE:
 			ast.body.isLoop = true;
 			if (ast.body.scopeId) out.push("var " + this.ScopeId + ast.body.scopeId + "={};");
 			else out.push("var " + this.ScopeId + "Stmt" + (this.StatementBlocks + 1) + "={};");
-			
+
 			out.push(this.currentLabel + "while(" + generate(ast.condition) + ")");
-			
+
 			if (ast.body.type != jsdef.BLOCK) {
 				this.NewPseudoBlock(out, generate, ast, ast.body, true);
 			}else {
 				out.push(generate(ast.body));
 			}
-			
+
 			ast.body.scopeId && out.push(this.ScopeId + ast.body.scopeId + "=null;");
-			
+
 			break;
 		case jsdef.DO:
 			ast.body.isLoop = true;
@@ -1625,49 +1625,49 @@ compiler.prototype.compile = function (ast) {
 			else out.push("var " + this.ScopeId + "Stmt" + (this.StatementBlocks + 1) + "={};");
 
 			out.push(this.currentLabel + "do");
-			
+
 			if (ast.body.type != jsdef.BLOCK) {
 				this.NewPseudoBlock(out, generate, ast, ast.body, true);
 			}else {
 				out.push(generate(ast.body));
 			}
-			
+
 			out.push("while(" + generate(ast.condition) + ");");
-			
+
 			ast.body.scopeId && out.push(this.ScopeId + ast.body.scopeId + "=null;");
-			
+
 			break;
-			
+
 		//break/continue
 		case jsdef.BREAK:
 			this.breakStmt = "break";
 			if (ast.label) this.breakStmt += " " + ast.label;
 			this.breakStmt += ";";
-			
+
 			if (!this.inCase) {
 				out.push(this.breakStmt);
 				this.breakStmt = "";
 			}
-			
+
 			break;
-		case jsdef.CONTINUE:			
+		case jsdef.CONTINUE:
 			this.continueStmt = "continue";
 			if (ast.label) this.continueStmt += " " + ast.label;
 			this.continueStmt += ";";
-			
+
 			if (!this.inCase) {
 				out.push(this.continueStmt);
 				this.continueStmt = "";
 			}
-			
+
 			break;
-			
+
 		//Variable declarations
 		case jsdef.VAR:
 			this.TypeCheck(ast);
-			
+
 			var prefix = "", insideClass = this.InsideClass();
-			
+
 			if (ast.public) {
 				if (ast.static) {
 					out.push(prefix = this.AdjustedChainedClassName() + ".");
@@ -1688,7 +1688,7 @@ compiler.prototype.compile = function (ast) {
 			else {
 				out.push("var ");
 			}
-			
+
 			//Destructuring assignment
 			if (ast[0].type == jsdef.ARRAY_INIT) {
 				if (ast[0].initializer && ast[0].initializer.type == jsdef.ARRAY_INIT) {
@@ -1698,12 +1698,12 @@ compiler.prototype.compile = function (ast) {
 						var len = ast[0].initializer.length;
 						for (var item in ast[0].initializer) {
 							if (!isFinite(item)) continue;
-							
+
 							if (ast[0].initializer[item].type == jsdef.VOID) {
 								len--;
 							}
 						}
-					
+
 						if (ast[0].length >= len) {
 							this.NewError({
 								type: SyntaxError,
@@ -1711,12 +1711,12 @@ compiler.prototype.compile = function (ast) {
 							}, ast);
 						}
 					}
-					
+
 					//Loop identifiers and build array
 					var ids = [];
 					for (var item in ast[0]) {
 						if (!isFinite(item)) continue;
-						
+
 						//Check that it's not void, etc.
 						if (ast[0][item].type == jsdef.IDENTIFIER) {
 							ids.push(ast[0][item].value);
@@ -1725,13 +1725,13 @@ compiler.prototype.compile = function (ast) {
 							ids.push(void 0);
 						}
 					}
-					
+
 					var tmp = this.CreateTempVar();
 					out.push(tmp + "=" + generate(ast[0].initializer) + ";");
 					var VarDecls = [];
 					for (var i=0, len=ids.length; i<len; i++) {
 						if (typeof ids[i] == "undefined") continue;
-						
+
 						VarDecls.push(ids[i] + "=" + tmp + "[" + i + "]");
 					}
 					VarDecls.length && out.push("var " + VarDecls.join(",") + ";");
@@ -1741,7 +1741,7 @@ compiler.prototype.compile = function (ast) {
 					var vartype = this.types[ast[0].vartype]["default"], _out = [];
 					for (var item in ast[0]) {
 						if (!isFinite(item)) continue;
-						
+
 						_out.push(ast[0][item].value + "=" + vartype);
 					}
 					out.push(_out.join(",") + ";");
@@ -1749,49 +1749,49 @@ compiler.prototype.compile = function (ast) {
 				else {
 					var tmp = this.CreateTempVar();
 					out.push(tmp + "=" + generate(ast[0].initializer) + ";");
-					
+
 					var VarDecls = [], i = 0;
 					for (var item in ast[0]) {
 						if (!isFinite(item)) continue;
-						
+
 						//Check that it's not void, etc.
 						if (ast[0][item].type == jsdef.IDENTIFIER) {
-							VarDecls.push(ast[0][item].value + "=" + tmp + 
+							VarDecls.push(ast[0][item].value + "=" + tmp +
 											"[" + i + "]");
 						}
-						
+
 						i++;
 					}
-					
+
 					VarDecls.length && out.push("var " + VarDecls.join(",") + ";");
 				}
-				
+
 				break;
 			}
-			
+
 			var id = "", varObject, varList = [], firstVar = true, reset = [],
 				context = this.context, scope = this.ScopeJS(this.scopeChain.length-1);
-				
+
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-				
+
 				varObject = {
 					identifier: id = ast[item].value,
 					properties: {},
-					
+
 					//Internal properties
 					"[[ReadOnly]]": false,
 					"[[DontEnum]]": false,
 					"[[DontDelete]]": true,
-					
+
 					"[[Prototype]]": this.GetProto(ast[item].vartype),
-					
+
 					//Non-standard
 					"[[Type]]": ast[item].vartype
 				};
-				
+
 				//Assign initial value
-				if (ast[item].initializer) {					
+				if (ast[item].initializer) {
 					varList.push({
 						identifier: id,
 						value: varObject.value = ast[item].initializer,
@@ -1803,7 +1803,7 @@ compiler.prototype.compile = function (ast) {
 						type: ast[item].vartype || undefined
 					});
 				}
-				
+
 				//Has this variable already been declared in the current context?
 				for (var j=scope.Variables.length-1; j>=0; j--) {
 					if (scope.Variables[j].identifier !== id) {
@@ -1815,17 +1815,17 @@ compiler.prototype.compile = function (ast) {
 						}, ast);
 					}
 				}
-				
+
 				if (insideClass) {
 					(scope = this.CurrentClass()).Variables.push(varObject = {
 						identifier: id,
 						properties: {},
-					
+
 						//Standard internal properties
 						"[[ReadOnly]]": false,
 						"[[DontEnum]]": false,
 						"[[DontDelete]]": true,
-					
+
 						//Non-standard internal properties
 						"[[Type]]": ast[item].vartype,
 						"[[Public]]": !!ast.public,
@@ -1836,20 +1836,20 @@ compiler.prototype.compile = function (ast) {
 						"[[MemberOf]]": this.currentClass,
 						"[[ClassId]]": this.CurrentClassScopeId()
 					});
-					
+
 					if (ast.public) {
 						this.classes[this.CurrentClassScopeId()].publicMembers.push(id);
 					}
 					else if (ast.protected) {
 						this.classes[this.CurrentClassScopeId()].protectedMembers.push(id);
 					}
-					
+
 					scope.Variables.push(context.ActivationObject[id] = varObject);
 				}
-				
+
 				scope.Variables.push(context.ActivationObject[id] = varObject);
 			}
-			
+
 			for (var i=0, len=varList.length, currentId = ""; i<len; i++) {
 				if (!firstVar) {
 					if (insideClass && prefix) {
@@ -1859,21 +1859,21 @@ compiler.prototype.compile = function (ast) {
 						out.push(",");
 					}
 				}
-				
+
 				out.push(currentId = varList[i].identifier);
-				
+
 				if ("value" in varList[i]) {
 					if (varList[i].value && varList[i].value.name === void 0) {
 						//If it's a "class expression" (e.g. var foo = class {})
 						//we need to assign the anonymous class a name
 						if (varList[i].value.type == jsdef.CLASS) {
 							varList[i].value.name = varList[i].identifier;
-							
+
 							varList[i].value.nestedParent = this.CurrentClass();
-							
+
 							varList[i].value.static = ast.static;
 						}
-						
+
 						//Handle nested groups and calls for class var inits
 						if (varList[i].value.type == jsdef.GROUP ||
 							varList[i].value.type == jsdef.CALL) {
@@ -1882,13 +1882,13 @@ compiler.prototype.compile = function (ast) {
 							//and prevents it from becoming:
 							//  (var undefined = ...)
 							var reducedNode = this.reduceVarInit(varList[i].value);
-							
+
 							if (reducedNode) {
 								reducedNode.name = varList[i].identifier;
 								reducedNode.reduced = true;
 							}
 						}
-						
+
 						//Remove access modifiers so:
 						//  private var foo = function(){};
 						//doesn't become:
@@ -1911,7 +1911,7 @@ compiler.prototype.compile = function (ast) {
 				else if (insideClass) {
 					out.push("=undefined");
 				}
-				
+
 				//Has this variable already been declared in the block?
 				if (scope.map_BlockVars.hasOwnProperty(currentId)) {
 					//Redeclare variable in function scope
@@ -1921,7 +1921,7 @@ compiler.prototype.compile = function (ast) {
 					this.LookupScopeChain(currentId, this.scopeChain.length-2,
 						function(find) {
 							var newScope = _this.scopes[find.scopeId];
-							
+
 							if (find.isBlockVariable) {
 								delete newScope.map_BlockVars[currentId];
 								newScope.Variables.push(
@@ -1930,37 +1930,37 @@ compiler.prototype.compile = function (ast) {
 							}
 						}
 					);
-					
+
 					//Throw a warning
 					this.NewWarning({
 						type: SyntaxError,
 						message: "Redeclaration of let " + currentId
 					}, ast);
 				}
-				
+
 				firstVar = false;
 			}
 			out.push(";");
 			out = out.concat(reset);
-			
+
 			break;
 		case jsdef.CONST:
 			break;
 		case jsdef.LET:
 			this.TypeCheck(ast);
-			
+
 			var id = "", varObject, varList = [], oid = "";
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-				
+
 				oid = ast[item].value;
 				context = this.context;
-				
+
 				scope = this.CurrentScope();//this.scopes[ast.scopeId];
-				
+
 				//Rename identifier
 				if (scope.map_BlockVars[oid] === undefined) {
-					var nextVar = 
+					var nextVar =
 						+context.NextBlockVariable[context.NextBlockVariable.length - 1] + 1;
 					//Greater than z, jump to A
 					if (nextVar > 123) {
@@ -1979,29 +1979,29 @@ compiler.prototype.compile = function (ast) {
 				//Re-declare/re-assign block-scoped variable
 				else {
 					id = scope.map_BlockVars[oid];
-					
+
 					this.NewWarning({
 						type: SyntaxError,
 						message: "Redeclaration of let " + oid
 					}, ast);
 				}
-				
+
 				varObject = {
 					identifier: scope.map_BlockVars[oid] = id,
 					properties: {},
-					
+
 					//Internal properties
 					"[[ReadOnly]]": false,
 					"[[DontEnum]]": false,
 					"[[DontDelete]]": true,
-					
+
 					//Non-standard
 					"[[Type]]": ast[item].vartype,
 					"[[Block]]": true
 				};
-				
+
 				//Assign initial value
-				if (ast[item].initializer) {					
+				if (ast[item].initializer) {
 					varList.push({
 						identifier:id,
 						_previousIdentifier: oid,
@@ -2013,13 +2013,13 @@ compiler.prototype.compile = function (ast) {
 						_previousIdentifier: oid
 					});
 				}
-				
+
 				for (var i=0, len=scope.BlockVariables.length; i<len; i++) {
 					if (scope.BlockVariables[i].identifier === id) {
 						break;
 					}
 				}
-				
+
 				if (i === scope.BlockVariables.length) {
 					scope.BlockVariables.push(
 						context.ActivationObject[id] = varObject
@@ -2030,20 +2030,20 @@ compiler.prototype.compile = function (ast) {
 			for (var i=0, len=varList.length, currentId = ""; i<len; i++) {
 				out.push(this.ScopeId + this.CurrentScope().scopeId + ".");
 				out.push(currentId = varList[i].identifier);
-				
+
 				if (varList[i].hasOwnProperty("value")) {
 					if (varList[i].value && varList[i].value.name === undefined) {
-						
+
 						//If it's a "class expression" (e.g. var foo = class {})
 						//we need to assign the anonymous class a name
 						if (varList[i].value.type == jsdef.CLASS) {
 							varList[i].value.name = varList[i].identifier;
-							
+
 							varList[i].value.nestedParent = this.CurrentClass();
-							
+
 							varList[i].value.static = ast.static;
 						}
-						
+
 						//Remove access modifiers so:
 						//  private var foo = function(){};
 						//doesn't become:
@@ -2056,69 +2056,69 @@ compiler.prototype.compile = function (ast) {
 							varList[i].value.body.static = ast.static;
 						}
 					}
-					
+
 					out.push("=" + generate(varList[i].value));
 				}
 				else out.push("=undefined");
-				
+
 				out.push(";");
-				
+
 				//Has this variable already been declared in the execution context?
 				for (var j=scope.Variables.length-1; j>=0; j--) {
-					if (!scope.Variables[j] || 
+					if (!scope.Variables[j] ||
 						scope.Variables[j].identifier !== varList[i]._previousIdentifier) {
 						continue;
 					}
-				
+
 					//Redeclare variable in block scope
 					//scope.map_BlockVars[currentId] = generate(varList[i].value); //Causing infinite loop
 					scope.Variables.splice(j++, 1);
 					out.push(varList[i]._previousIdentifier + "=undefined;");
-					
+
 					//Throw a warning
 					this.NewWarning({
 						type: SyntaxError,
-						message: "Redeclaration of var " + 
+						message: "Redeclaration of var " +
 									varList[i]._previousIdentifier
 					}, ast);
 				}
 			}
-			
+
 			break;
 		case jsdef.IDENTIFIER:
 			scope = this.CurrentScope();
-			
+
 			//Member of an object
 			if (ast.isMember) {
 				out.push(ast.value);
 				break;
 			}
-			
+
 			//"args" array
 			if (ast.value == "args") {
 				var currentFunc = this.CurrentFunction(this.scopeChain.length-1);
 				if (currentFunc) currentFunc.usesArgs = true;
 			}
-			
+
 			//Variable is defined inside the current block
 			if (scope.map_BlockVars.hasOwnProperty(ast.value)) {
-				out.push(this.ScopeId + this.CurrentScope().scopeId + 
-							"." + 
+				out.push(this.ScopeId + this.CurrentScope().scopeId +
+							"." +
 							scope.map_BlockVars[ast.value]
 						);
 			}
 			//Look up the scope chain for variable definition
 			else {
 				var findIdentifier = ast.value, scopeChain = this.scopeChain;
-				
+
 				var currentClass = this.CurrentClass(), skipLookup = false;
 				//Don't lookup variables for static methods and classes
 				if (scope.static || this.InsideStaticMember()) {
 					skipLookup = true;
 				}
-				
+
 				skipLookup && out.push(findIdentifier);
-				
+
 				!skipLookup && this.LookupScopeChain(findIdentifier, this.scopeChain.length-1,
 					function (find) {
 						//Found the variable
@@ -2126,8 +2126,8 @@ compiler.prototype.compile = function (ast) {
 							//Found variable is local to block
 							if (find.isBlockVariable) {
 								var GetScopeId = _this.ScopeId + find.scopeId;
-								out.push(GetScopeId + 
-									"." + 
+								out.push(GetScopeId +
+									"." +
 									_this.scopes[find.scopeId].map_BlockVars[findIdentifier]);
 							}
 							//Handle class members
@@ -2137,11 +2137,11 @@ compiler.prototype.compile = function (ast) {
 										out.push(findIdentifier);
 									}
 									else if (find.data["[[Protected]]"]) {
-										out.push("__CLASS" + find.data["[[ClassId]]"] + "__." + 
+										out.push("__CLASS" + find.data["[[ClassId]]"] + "__." +
 												 "__PROTECTED__." + findIdentifier);
 									}
 									else {
-										out.push(find.data["[[MemberOf]]"] + "." + 
+										out.push(find.data["[[MemberOf]]"] + "." +
 												 findIdentifier);
 									}
 								}
@@ -2164,50 +2164,50 @@ compiler.prototype.compile = function (ast) {
 						//Couldn't find variable declaration
 						else {
 							var inheritedMember = false, currentClass = _this.CurrentClass();
-							
+
 							//Check for inherited class
 							if (currentClass && currentClass.extends) {
-								
+
 								var i,
 									foundSuper = false,
 									currentItem,
 									currentChainItem = currentClass.body.scopeId,
 									counter = 1;
-								
+
 								while( currentChainItem &&
 									  (currentItem = _this.classes[currentChainItem])
 									 ) {
 									if (~currentItem.protectedMembers.indexOf(findIdentifier)) {
 										out.push(
 											"__CLASS" + _this.CurrentClassScopeId() + "__." +
-											(new Array(counter)).join("__SUPER__.") + 
+											(new Array(counter)).join("__SUPER__.") +
 											"__PROTECTED__." + findIdentifier
 										);
-										
+
 										inheritedMember = true;
 										break;
 									}
 									else if (~currentItem.publicMembers.indexOf(findIdentifier)) {
 										out.push(
 											"__CLASS" + _this.CurrentClassScopeId() + "__." +
-											(new Array(counter)).join("__SUPER__.") + 
+											(new Array(counter)).join("__SUPER__.") +
 											findIdentifier
 										);
-										
+
 										inheritedMember = true;
 										break;
 									}
-								
+
 									//Keep looking up inheritance chain
 									if (currentItem.__SUPER__) for (var i in _this.classes) {
-										if (isFinite(i) && 
+										if (isFinite(i) &&
 											_this.classes[i].id == currentItem.__SUPER__) {
 											currentChainItem = i;
 											foundSuper = true;
 											break;
 										}
 									}
-									
+
 									if (!foundSuper) break;
 									else {
 										foundSuper = false;
@@ -2215,21 +2215,21 @@ compiler.prototype.compile = function (ast) {
 									}
 								}
 							}
-							
+
 							if (!inheritedMember) {
 								!_this.isObjProperty && _this.NewWarning({
 									type: ReferenceError,
-									message: "Variable '" + findIdentifier + 
+									message: "Variable '" + findIdentifier +
 												"' has not been declared"
 								}, ast);
-						
+
 								out.push(findIdentifier);
 							}
 						}
 				});
 			}
 			break;
-			
+
 		//Accessors
 		case jsdef.INDEX:
 			out.push(generate(ast[0]));
@@ -2240,32 +2240,32 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.DOT:
 			out.push(generate(ast[0]));
 			out.push(".");
-			
+
 			var currentClass = this.CurrentClass();
-			
+
 			//Handle protected members
 			if (currentClass && ast[0]) {
 				var classObj = this.classes[currentClass.body.scopeId],
 					getSuperClass = classObj.__SUPER__;
-				
+
 				//Handle protected members of super class
 				if (ast[0].value == "super" && getSuperClass) {
 					var classMembers,
 						findIdentifier = ast[1].value;
-					
-					//Loop through the scope chain until we can find the 
+
+					//Loop through the scope chain until we can find the
 					//Activation Object for the super class
 					var i = 0,
 						j = 0,
 						_currentScope,
 						len = this.scopeChain.length,
 						_len = 0;
-					
+
 					for (; i < len; i++) {
 						_currentScope = this.scopeChain[i];
 						j = 0;
 						_len = _currentScope.length;
-						
+
 						for (; j < _len; j++) {
 							if (this.scopeChain[i][j].name == getSuperClass) {
 								classMembers = this.scopeChain[i][j].Variables;
@@ -2273,14 +2273,14 @@ compiler.prototype.compile = function (ast) {
 							}
 						}
 					}
-				
+
 					//Now that we've found the super class, loop through its
 					//members to find out if we're accessing a protected member
 					for (var i = 0, len = classMembers.length; i < len; i++) {
 						if (classMembers[i].identifier == findIdentifier &&
 							classMembers[i]["[[Protected]]"]) {
 							out.push("__PROTECTED__.");
-							
+
 							break;
 						}
 					}
@@ -2289,29 +2289,29 @@ compiler.prototype.compile = function (ast) {
 				/*else if (ast[0].value == "this") {
 					var classMembers = currentClass.Variables,
 						findIdentifier = ast[1].value;
-				
+
 					for (var i = 0, len = classMembers.length; i < len; i++) {
 						if (classMembers[i].identifier == findIdentifier &&
 							classMembers[i]["[[Protected]]"]) {
 							out.push("__PROTECTED__.");
-							
+
 							break;
 						}
 					}
 				}*/
 			}
-			
+
 			//Denote object member to prevent compiler warnings
 			if (ast[1].type == jsdef.IDENTIFIER) {
 				ast[1].isMember = true;
 			}
 			out.push(generate(ast[1]));
 			break;
-			
+
 		//Assignment
 		case jsdef.ASSIGN:
 			this.TypeCheck(ast);
-			
+
 			if (ast[0].type == jsdef.THIS) {
 				this.NewError({
 					type: ReferenceError,
@@ -2320,24 +2320,24 @@ compiler.prototype.compile = function (ast) {
 			}
 			else if (ast[0].type == jsdef.ARRAY_INIT) {
 				//Destructuring assignment
-				if (ast.value == "=") {				
+				if (ast.value == "=") {
 					if (ast[0].length > ast[1].length) {
 						this.NewError({
 							type: SyntaxError,
 							message: "Invalid destructuring assignment: length mismatch"
 						}, ast);
 					}
-						
+
 					var tmp = this.CreateTempVar();
-					
+
 					out.push("var " + tmp + "=" + generate(ast[1]) + ";");
-					
+
 					for (var item in ast[0]) {
 						if (!isFinite(item) || ast[0][item].type != jsdef.IDENTIFIER) continue;
-						
+
 						out.push(ast[0][item].value + "=" + tmp + "[" + (+item) + "];");
 					}
-					
+
 					break;
 				}
 				//Array operators (e.g. [1,2,3] *= 2 -> [2,4,6])
@@ -2358,17 +2358,17 @@ compiler.prototype.compile = function (ast) {
 					message: "Invalid left-hand assignment"
 				}, ast);
 			}
-			
+
 			//TODO: If it's the dot operator or index, assign the property
 			scope = this.CurrentScope();
 			/*if (ast[0].type == jsdef.DOT) {
 				var find = ast[0][0].value;
 				for (var j=scope.Variables.length-1; j>=0; j--) {
-					if (!scope.Variables[j] || 
+					if (!scope.Variables[j] ||
 						scope.Variables[j].identifier !== find) {
 						continue;
 					}
-					
+
 					scope.Variables[j].properties[generate(ast[0][1])] = {
 						properties: {},
 						identifier: ast[0][1].value
@@ -2379,10 +2379,10 @@ compiler.prototype.compile = function (ast) {
 			}
 			else if (ast[0].type == jsdef.INDEX) {
 			}*/
-			
+
 			var id = generate(ast[0]);
 			out.push(id);
-			
+
 			if (ast.value == "=") {
 				out.push(ast.value);
 			}
@@ -2405,10 +2405,10 @@ compiler.prototype.compile = function (ast) {
 					out.push(ast.value + "=");
 				}
 			}
-			
+
 			out.push(generate(ast[1]));
 			break;
-			
+
 		//Statements
 		case jsdef.SEMICOLON:
 			//Ternary is used to avoid infinite loops
@@ -2417,18 +2417,18 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.EXTENSION:
 			var base = generate(ast.object) + "."; //Base object
 			var ext = this.GetCurrentContext().Extensions, _name = "";
-			
+
 			for (var item in ast.extend) {
 				if (!isFinite(item)) continue;
-				
+
 				ext.push(_name = base + generate(ast.extend[item][0]));
-				
+
 				out.push(_name + "=");
 				out.push(generate(ast.extend[item][1]) + ";");
 			}
-			
+
 			break;
-			
+
 		//Arithmetic Operators
 		case jsdef.PLUS:
 			out.push(generate(ast[0]));
@@ -2489,7 +2489,7 @@ compiler.prototype.compile = function (ast) {
 				out.push(generate(ast[0]));
 			}
 			break;
-			
+
 		//Unary operators
 		case jsdef.UNARY_PLUS:
 			out.push(" +");
@@ -2499,7 +2499,7 @@ compiler.prototype.compile = function (ast) {
 			out.push(" -");
 			out.push(generate(ast[0]));
 			break;
-			
+
 		//Bitwise operators
 		case jsdef.BITWISE_AND:
 			out.push(generate(ast[0]));
@@ -2535,7 +2535,7 @@ compiler.prototype.compile = function (ast) {
 			out.push(">>>");
 			out.push(generate(ast[1]));
 			break;
-			
+
 		//Comparison Operators
 		case jsdef.EQ:
 			out.push(generate(ast[0]));
@@ -2577,7 +2577,7 @@ compiler.prototype.compile = function (ast) {
 			out.push("<=");
 			out.push(generate(ast[1]));
 			break;
-			
+
 		//Logical operators
 		case jsdef.AND:
 			out.push(generate(ast[0]));
@@ -2593,7 +2593,7 @@ compiler.prototype.compile = function (ast) {
 			out.push("!");
 			out.push(generate(ast[0]));
 			break;
-			
+
 		//Literals
 		case jsdef.TRUE:
 			out.push("true");
@@ -2605,23 +2605,23 @@ compiler.prototype.compile = function (ast) {
 			//Multi-line strings/heredocs
 			if (Array.isArray(ast.value)) {
 				out.push('"');
-				
+
 				//Determine spacing on first line
 				var _indent = /^\s+/.exec(ast.value[0]), indent = "";
 				if (_indent && _indent.length && _indent[0]) {
 					indent = _indent[0];
 				}
-				
+
 				var re = /^\s+/; //Prevent re-instantiation every loop
 				for (var i=0, len=ast.value.length, _re, space = "", width = 0; i<len; i++) {
 					space = "";
 					width = 0;
 					_re = re.exec(ast.value[i]);
-					
+
 					if (_re && _re.length && _re[0]) {
 						space = _re[0];
 					}
-					
+
 					width = space.length - indent.length;
 					if (width > 0) {
 						out.push(JSON.stringify(ast.value[i].replace(
@@ -2634,11 +2634,11 @@ compiler.prototype.compile = function (ast) {
 								replace(/\\\\([A-Za-z])/gm, "\\$1")
 							);
 					}
-					
+
 					out.push("\\n");
 				}
 				out.pop(); //pop the last \n
-				
+
 				out.push('"');
 			}
 			else {
@@ -2649,17 +2649,17 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.NUMBER:
 			out.push(ast.value);
 			break;
-			
+
 		//Try/catch/finally/throw
 		case jsdef.TRY:
 			out.push("try");
 			out.push(generate(ast.tryBlock));
 			for (var catchClause in ast.catchClauses) {
 				if (!isFinite(catchClause)) continue;
-				
+
 				out.push("catch(" + ast.catchClauses[catchClause].varName + ")");
 				out.push(generate(ast.catchClauses[catchClause].block));
-				
+
 				ast.finallyBlock && out.push("finally" + generate(ast.finallyBlock));
 			}
 			break;
@@ -2668,14 +2668,14 @@ compiler.prototype.compile = function (ast) {
 			out.push(generate(ast.exception));
 			out.push(";");
 			break;
-		
+
 		//Miscellaneous
 		case jsdef.THIS:
 			/*
 			 *class foo {
 			 *  public function() {
 			 *    this; //replace with instance value
-			 *    
+			 *
 			 *    function bar() {
 			 *      this; //don't replace, just compile as "this" keyword
 			 *    }
@@ -2686,15 +2686,15 @@ compiler.prototype.compile = function (ast) {
 			 *  }
 			 *}
 			 */
-			//Walk two scopes up to determine if we're too "deep" within the 
+			//Walk two scopes up to determine if we're too "deep" within the
 			//class to replace this value
 			var twoScopesUp = this.scopeChain[this.scopeChain.length-2];
-			
+
 			if (this.currentClass &&
 				twoScopesUp &&
 				twoScopesUp.type == jsdef.CLASS &&
 				!this.InsideStaticMember()) {
-				
+
 				out.push(this.classId);
 			}
 			else {
@@ -2759,11 +2759,11 @@ compiler.prototype.compile = function (ast) {
 				out.push("(typeof " + id + "!='undefined'&&" + id + "!==null)");
 			}
 			else {
-				//We still have to wrap in parens due to object literals {} 
+				//We still have to wrap in parens due to object literals {}
 				//being treated as blocks otherwise
 				out.push("(" + generate(ast[0]) + "!=null)");
 			}
-			
+
 			break;
 		case jsdef.REGEXP:
 			//Ignore whitespace?
@@ -2778,7 +2778,7 @@ compiler.prototype.compile = function (ast) {
 								" without free spacing mode enabled."
 				}, ast);
 			}
-		
+
 			//Regular regex delimiter
 			if (ast.value[1] == "/") {
 				try {
@@ -2794,7 +2794,7 @@ compiler.prototype.compile = function (ast) {
 			//Custom regex delimiter
 			else {
 				var rePattern = ast.value[2].replace(/\//gmi, "\\/");
-				
+
 				//Catch malformed regex patterns, etc.
 				try {
 					RegExp(rePattern);
@@ -2811,10 +2811,10 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.ARRAY_INIT:
 			out.push("[");
 			var firstItem = true;
-			
+
 			function NumberRange(x, y, z) {
 				var ret = [];
-				
+
 				if (x <= y) {
 					for (; x <= y; x++) {
 						ret.push(x);
@@ -2826,22 +2826,22 @@ compiler.prototype.compile = function (ast) {
 						ret.push(x);
 					}
 				}
-				
+
 				return "[" + ret.join(",") + "]";
 			}
-			
+
 			function CharRange(x, y) {
 				var ret = [];
-				
+
 				x = x.charCodeAt(0);
 				y = y.charCodeAt(0);
-				
+
 				var chara = "";
-				
+
 				if (x <= y) {
 					for (; x <= y; x++) {
 						chara = String.fromCharCode(x);
-						
+
 						/^[A-Za-z]$/.test(chara) && ret.push('"' + chara + '"');
 					}
 				}
@@ -2849,14 +2849,14 @@ compiler.prototype.compile = function (ast) {
 				else {
 					for (; x >= y; x--) {
 						chara = String.fromCharCode(x);
-						
+
 						/^[A-Za-z]$/.test(chara) && ret.push('"' + chara + '"');
 					}
 				}
-				
+
 				return "[" + ret.join(",") + "]";
 			}
-			
+
 			//Numeric range; ex. [1...20]
 			if (ast[0] && ast[0].type == jsdef.RANGE) {
 				//Regular numeric ranges; ex. [1...10]
@@ -2915,14 +2915,14 @@ compiler.prototype.compile = function (ast) {
 							}, ast);
 						}
 					}
-						
+
 					if (ast[0][0].type == jsdef.UNARY_MINUS) {
 						x = -x;
 					}
 					if (ast[0][1].type == jsdef.UNARY_MINUS) {
 						y = -y;
 					}
-					
+
 					return NumberRange(x, y);
 				}
 				//Character ranges; ex. ["a"..."z"]
@@ -2951,11 +2951,11 @@ compiler.prototype.compile = function (ast) {
 			else {
 				for (var item in ast) {
 					if (!isFinite(item)) continue;
-				
+
 					if (!firstItem) out.push(",");
-				
+
 					out.push(generate(ast[item]));
-				
+
 					firstItem = false;
 				}
 			}
@@ -2973,81 +2973,81 @@ compiler.prototype.compile = function (ast) {
 			var tmp = "", ret = this.CreateTempVar();
 			for (var item in ast) {
 				if (!isFinite(item) || item === "0" || item === 0) continue;
-				
+
 				tmp = this.CreateTempVar();
-				
+
 				//for-in and for-inside loops
 				if (ast[item].type == jsdef.FOR_IN || ast[item].type == jsdef.FOR_INSIDE) {
 					if (ast[item].iterator.type == jsdef.LET) {
 						_out.push("for(var " + (it = ast[item].iterator[0].value) + " in ");
 						ast[item].type == jsdef.FOR_INSIDE && _out.push(tmp + "=");
 						_out.push(generate(ast[item].object) + "){");
-						
+
 						count++;
 					}
 					else if (ast[item].iterator.type == jsdef.VAR) {
 						_out.push("for(var " + (it = ast[item].iterator[0].value) + " in ");
 						ast[item].type == jsdef.FOR_INSIDE && _out.push(tmp + "=");
 						_out.push(generate(ast[item].object) + "){");
-						
+
 						count++;
 					}
 					else { //jsdef.IDENTIFIER
 						_out.push("for(" + (it = generate(ast[item].iterator)) + " in ");
 						ast[item].type == jsdef.FOR_INSIDE && _out.push(tmp + "=");
 						_out.push(generate(ast[item].object) + "){");
-						
+
 						count++;
 					}
-					
+
 					if (ast[item].type == jsdef.FOR_INSIDE) {
 						_out.push("if(Object.prototype.hasOwnProperty.call(" + tmp + "," + it + ")){");
-						
+
 						count++;
 					}
 				}
 				//if statements
 				else if (ast[item].type == jsdef.IF) {
 					_out.push("if(" + generate(ast[item].condition) + "){");
-					
+
 					count++;
 				}
 			}
 			_out.push(ret + ".push(" + generate(ast[0]) + ")"); //Body
 			while (count > 0) (_out.push("}"), --count); //Add closing braces
-			
+
 			out.push("(function(){var " + ret + "=[];");
-			
+
 			out = out.concat(_out);
-			
+
 			out.push("return " + ret + "})()");
-			
+
 			break;
 		case jsdef.OBJECT_INIT:
 			this.TypeCheck(ast);
-			
+
 			scope = this.CurrentScope();
-			
-			out.push("{");			
+
+			out.push("{");
 			for (var item in ast) {
 				if (!isFinite(item)) continue;
-				
+
 				var find, props, propsChain = [ast[item][0].value], currentProp, vartype;
-				
+
 				//Do the code generation before we add type annotations into
 				//Variables object because the PROPERTY_INIT will trigger
 				//the type system which resolves the type of each property
 				if (ast.parentProperty) ast[item].parentProperty = ast.parentProperty;
 				else ast[item].parentObject = ast;
-				
+
 				out.push(generate(ast[item]));
-				
+
 				vartype = ast[item][1]["[[Type]]"];
-				
+
 				if (ast.parentProperty) {
 					find = ast.parentProperty;
 					propsChain.push(find[0].value);
-					
+
 					while (find && (find.parentProperty || find.parentObject)) {
 						if (find.parentProperty) {
 							find = find.parentProperty;
@@ -3058,24 +3058,24 @@ compiler.prototype.compile = function (ast) {
 							break;
 						}
 					}
-					
+
 					find = find.assignedTo;
 				}else {
 					find = ast.assignedTo;
 				}
-				
+
 				//Now that we know the property type, loop through Variables object
 				for (var j=scope.Variables.length-1; j>=0; j--) {
-					if (!scope.Variables[j] || 
+					if (!scope.Variables[j] ||
 						scope.Variables[j].identifier !== find) {
 						continue;
 					}
-					
+
 					props = scope.Variables[j].properties;
-					
+
 					while(propsChain.length) {
 						currentProp = propsChain.pop();
-						
+
 						if (props[currentProp]) {
 							//This is a bit of a hack, but at least the [[Type]]
 							//property will be set correctly
@@ -3086,35 +3086,35 @@ compiler.prototype.compile = function (ast) {
 							props[currentProp] = props[currentProp] || {
 								"[[Type]]": vartype,
 								"[[Prototype]]": this.GetProto(vartype),
-						
+
 								properties: {}
 							};
-							
+
 							if (vartype == "Function") {
 								props[currentProp].properties.prototype = {
 									"[[Type]]": "Object",
 									"[[Prototype]]": this.GetProto("Object"),
-									
+
 									properties: {}
 								};
 							}
 						}
-					
+
 						props = props[currentProp].properties;
 					}
-					
+
 					break;
 				}
-				
+
 				out.push(",");
 			}
 			out[out.length-1] == "," && out.pop(); //Pop the last comma
 			out.push("}");
-			
+
 			break;
 		case jsdef.PROPERTY_INIT:
 			this.TypeCheck(ast);
-			
+
 			this.isObjProperty = true;
 			out.push(generate(ast[0]) + ":");
 			this.isObjProperty = false;
@@ -3123,7 +3123,7 @@ compiler.prototype.compile = function (ast) {
 				ast[1].parentProperty.name = ast[0].value;
 			}
 			out.push(generate(ast[1]));
-			
+
 			break;
 		case jsdef.LABEL:
 			if (ast.statement && !ast.statement.isLoop) {
@@ -3133,11 +3133,11 @@ compiler.prototype.compile = function (ast) {
 			else {
 				this.currentLabel = ast.label + ":";
 			}
-			
+
 			out.push(generate(ast.statement));
-			
+
 			this.currentLabel = "";
-			
+
 			break;
 		case jsdef.WITH:
 			out.push("with(" + generate(ast.object) + ")");
@@ -3149,7 +3149,7 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.DEBUGGER:
 			out.push("debugger;");
 			break;
-			
+
 		//Pre-processor directives - throw warnings
 		case jsdef.TYPESYS:
 			this.NewWarning({
@@ -3157,29 +3157,29 @@ compiler.prototype.compile = function (ast) {
 				message: "Pre-processor directives must be at the top of the file."
 			}, ast);
 			break;
-		
+
 		default:
 			break;
 	}
-	
+
 	return out.join("");
 };
 
 compiler.prototype.preprocess = function(ast) {
 	var node, _node;
-	
+
 	ast = ast || this.ast;
-	
+
 	descend: for (var item in ast) {
 		if (!isFinite(item)) continue;
-		
+
 		_node = ast[item];
 		if (_node.type != jsdef.SEMICOLON) break descend;
 		node = _node.expression;
-		
+
 		switch(node.type) {
 			case jsdef.TYPESYS:
-				if (node[0].type == jsdef.IDENTIFIER || node[0].type == jsdef.STRING) {				
+				if (node[0].type == jsdef.IDENTIFIER || node[0].type == jsdef.STRING) {
 					if (node[0].value == "none" || node[0].value == "None") {
 						this.typeSystem = null;
 					}
@@ -3199,14 +3199,19 @@ compiler.prototype.preprocess = function(ast) {
 						message: "Invalid type system."
 					}, node);
 				}
-				
+
 				delete ast[item];
-		
+
 				break;
 			default:
 				break descend;
 		}
 	}
-	
+
 	return ast;
 };
+
+(function() {
+	var GLOBAL = this;
+	GLOBAL.compiler = compiler;
+}).call();

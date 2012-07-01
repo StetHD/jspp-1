@@ -1,7 +1,7 @@
 Alpha 0.014
 -----------
 * Updated unit tests
-* Improved test coverage for static typing
+* Improved test coverage for static typing and class access modifiers
 * Fixed bugs with "this" keyword when used inside classes
 * Fixed global wrapper function
 
