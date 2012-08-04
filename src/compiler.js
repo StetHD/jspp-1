@@ -1447,7 +1447,19 @@ compiler.prototype.compile = function (ast) {
 			break;
 		case jsdef.CASE:
 			this.inCase = true;
-			out.push("case " + generate(ast.caseLabel) + ":");
+
+			//Comma separated cases
+			if (ast.caseLabel.type == jsdef.COMMA) {
+				for (var _case in ast.caseLabel) {
+					if (!isFinite(_case)) continue;
+
+					out.push("case " + generate(ast.caseLabel[_case]) + ":");
+				}
+			}
+			//Regular case statements
+			else {
+				out.push("case " + generate(ast.caseLabel) + ":");
+			}
 
 			ast.statements.scopeId = "Stmt" + (++this.StatementBlocks);
 			this.NewScope(ast.statements.scopeId, Node);
@@ -1457,6 +1469,8 @@ compiler.prototype.compile = function (ast) {
 				out.push(generate(ast.statements));
 			}
 			this.inCase = false;
+			out.push("break;");
+
 			this.ExitScope();
 
 			break;

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<link media="screen" type="text/css" rel="stylesheet" href="qunit.css">
+	<title>JS++ Unit Tests: Conditionals</title>
+	<style type="text/css">
+		code { display: none; }
+	</style>
+</head>
+<body>
+
+<h1 id="qunit-header">JavaScript++ Conditionals</h1>
+<h2 id="qunit-banner"></h2>
+<div id="qunit-testrunner-toolbar"></div>
+<h2 id="qunit-userAgent"></h2>
+<ol id="qunit-tests"></ol>
+<div id="qunit-fixture">test markup, will be hidden</div>
+
+<!--
+#######################BASIC REQUIREMENTS#######################
+-->
+<code class="eval">
+var foo;
+switch(true) {
+	case true:
+		foo = true;
+		break;
+	default:
+		foo = false;
+		break;
+}
+
+foo;
+</code>
+<code class="eval">
+var foo;
+switch(1) {
+	case true, 1:
+		foo = true;
+		break;
+	default:
+		foo = false;
+		break;
+}
+
+foo;
+</code>
+<code class="eval">
+var foo;
+switch(1) {
+	case true, 1:
+		foo = true;
+		break;
+	case false, 0:
+	default:
+		foo = false;
+		break;
+}
+
+foo;
+</code>
+<code class="eval">
+var foo;
+switch(true) {
+	case true:
+		foo = true;
+	default:
+		foo = false;
+}
+
+foo;
+</code>
+<code class="eval">
+var foo;
+switch(1) {
+	case true, 1:
+		foo = true;
+	default:
+		foo = false;
+}
+
+foo;
+</code>
+<code class="eval">
+var foo;
+switch(1) {
+	case true, 1:
+		foo = true;
+	case false, 0:
+	default:
+		foo = false;
+}
+
+foo;
+</code>
+
+<button onclick="Start()">Start</button>
+
+<script type="text/javascript" src="../src/jsdefs.js"></script>
+<script type="text/javascript" src="../src/jsparse.js"></script>
+<script type="text/javascript" src="../src/compiler.js"></script>
+
+<script type="text/javascript" src="qunit.js"></script>
+<script type="text/javascript">
+var codeTags = document.getElementsByTagName("code"), code = [], c;
+
+for (var i=0, len=codeTags.length; i<len; i++) {
+	c = new compiler(window.narcissus.jsparse((codeTags[i].innerText||codeTags[i].textContent)), {nowrap:true});
+	c.preprocess();
+	try {
+		code.push(codeTags[i].className == "eval" ? eval(c.compile()) : c.compile());
+	}catch(e) {
+		code.push("Error");
+	}
+}
+
+while(code.length != codeTags.length); //Stop race conditions
+
+function Start() { //Problems with race conditions with qUnit, so wrap in function
+
+var i = 0;
+
+test("Switch Statements", function() {
+	equal(code[i++], true, "Basic Switch Statement");
+	equal(code[i++], true, "Switch statement with one comma-separated case");
+	equal(code[i++], true, "Switch statement with multiple comma-separated cases");
+	equal(code[i++], true, "Switch statement without break statements");
+	equal(code[i++], true, "Switch statement without break statements and one comma-separated case");
+	equal(code[i++], true, "Switch statement without break statements and multiple comma-separated cases");
+});
+
+}
+</script>
+</body>
+</html>

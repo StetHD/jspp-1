@@ -4,6 +4,8 @@ Alpha 0.014
 * Improved test coverage for static typing and class access modifiers
 * Fixed bugs with "this" keyword when used inside classes
 * Fixed global wrapper function
+* Automatically "break" each case in a switch statement
+* Switch statements now support comma-separated cases
 
 1/29/12 - Alpha 0.013
 --------
