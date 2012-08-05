@@ -1,0 +1,113 @@
+/*******************************SWITCH STATEMENTS******************************/
+test("Switch Statements", function() {
+	equal(
+		(function() {
+			var foo;
+
+			switch(true) {
+				case true:
+					foo = true;
+					break;
+				default:
+					foo = false;
+					break;
+			}
+
+			return foo;
+		})()
+
+		, true
+		, "Basic Switch Statement"
+	);
+
+	equal(
+		(function() {
+			var foo;
+			switch(1) {
+				case true, 1:
+					foo = true;
+					break;
+				default:
+					foo = false;
+					break;
+			}
+
+			return foo;
+		})()
+
+		, true
+		, "Switch statement with one comma-separated case"
+	);
+
+	equal(
+		(function() {
+			var foo;
+			switch(1) {
+				case true, 1:
+					foo = true;
+					break;
+				case false, 0:
+				default:
+					foo = false;
+					break;
+			}
+
+			return foo;
+		})()
+
+		, true
+		, "Switch statement with multiple comma-separated cases"
+	);
+
+	equal(
+		(function() {
+			var foo;
+			switch(true) {
+				case true:
+					foo = true;
+				default:
+					foo = false;
+			}
+
+			return foo;
+		})()
+
+		, true
+		, "Switch statement without break statements"
+	);
+
+	equal(
+		(function() {
+			var foo;
+			switch(1) {
+				case true, 1:
+					foo = true;
+				default:
+					foo = false;
+			}
+
+			return foo;
+		})()
+
+		, true
+		, "Switch statement without break statements and one comma-separated case"
+	);
+
+	equal(
+		(function() {
+			var foo;
+			switch(1) {
+				case true, 1:
+					foo = true;
+				case false, 0:
+				default:
+					foo = false;
+			}
+
+			return foo;
+		})()
+
+		, true
+		, "Switch statement without break statements and multiple comma-separated cases"
+	);
+});

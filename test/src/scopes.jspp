@@ -1,0 +1,199 @@
+/******************************BASIC REQUIREMENTS******************************/
+test("Basic Requirements", function() {
+	equal(
+		(function() {
+			var myVar = 1;
+
+			return myVar;
+		})()
+
+		, 1
+		, "Global Scope"
+	);
+
+	equal(
+		(function() {
+			return (function() {
+				var foo = 1;
+
+				return foo;
+			})();
+		})()
+
+		, 1
+		,"Function Scope"
+	);
+
+	equal(
+		(function() {
+			let foo = 1;
+
+			return foo;
+		})()
+
+		, 1
+		, "Block Scope"
+	);
+});
+
+/*********************************BLOCK SCOPE**********************************/
+test("Block Scope", function() {
+	raises(
+		function() {
+			{
+				let foo = 1;
+			}
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "Block { ... }"
+	);
+
+	raises(
+		function() {
+			if (1) {
+				let foo = 1;
+			}
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "if Statement"
+	);
+
+	raises(
+		function() {
+			for (let foo = 0; foo < 1; foo++);
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "for Loop"
+	);
+
+	raises(
+		function() {
+			for (let foo in {});
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "for-in Loop"
+	);
+
+	raises(
+		function() {
+			for (let foo inside {});
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "for-inside Loop"
+	);
+
+	raises(
+		function() {
+			while (1) {
+				let foo = 1;
+				break;
+			}
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "while Loop"
+	);
+
+	raises(
+		function() {
+			do {
+				let foo = 1;
+			}
+			while(0);
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "do-while Loop"
+	);
+
+	raises(
+		function() {
+			switch(1) {
+				case 1:
+					let foo = 1;
+					break;
+			}
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "switch/case"
+	);
+	raises(
+		function() {
+			switch(2) {
+				case 1:
+					let foo = 1;
+					break;
+				default:
+					let foo = 2;
+					break;
+			}
+
+			return foo;
+		}
+
+		, ReferenceError
+		, "switch/case/default"
+	);
+
+	equal(
+		(function() {
+			var foo = 1;
+
+			{ let foo = 2; }
+
+			return foo;
+		})()
+
+		, 1
+		, "Redeclaration of var as let"
+	);
+
+	equal(
+		(function() {
+			return (function(foo) {
+				{ let foo = 2; }
+
+				return foo;
+			})(1);
+		})()
+
+		, 1
+		, "Redeclaration of function parameter with let"
+	);
+
+	equal(
+		(function() {
+			{
+				let foo = 1;
+				{
+					return foo;
+				}
+			}
+		})()
+
+		, 1
+		, "Lexical scoping"
+	);
+});

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
-	<link media="screen" type="text/css" rel="stylesheet" href="qunit.css">
+	<link media="screen" type="text/css" rel="stylesheet" href="lib/qunit.css">
 	<title>JS++ Unit Tests: #typesys strict</title>
 	<style type="text/css">
 		code { display: none; }
@@ -15,7 +15,6 @@
 <div id="qunit-testrunner-toolbar"></div>
 <h2 id="qunit-userAgent"></h2>
 <ol id="qunit-tests"></ol>
-<div id="qunit-fixture">test markup, will be hidden</div>
 
 <!--
 #######################BASIC REQUIREMENTS#######################
@@ -1075,7 +1074,7 @@ foo ||= /(?:)/;
 <script type="text/javascript" src="../src/compiler.js"></script>
 <script type="text/javascript" src="../typesys/strict.js"></script>
 
-<script type="text/javascript" src="qunit.js"></script>
+<script type="text/javascript" src="lib/qunit.js"></script>
 <script type="text/javascript">
 var codeTags = document.getElementsByTagName("code"), code = [], c;
 
@@ -1116,7 +1115,7 @@ test("String Operations - String and String", function() {
 	equal(code[i++].type, TypeError, "String / String");
 	equal(code[i++].type, TypeError, "String ** String");
 	equal(code[i++].type, TypeError, "String % String");
-	
+
 	notEqual(code[i++].type, TypeError, "String += String");
 	equal(code[i++].type, TypeError, "String -= String");
 	equal(code[i++].type, TypeError, "String *= String");
@@ -1135,14 +1134,14 @@ test("String Operations - String and Array", function() {
 	equal(code[i++].type, TypeError, "String / Array");
 	equal(code[i++].type, TypeError, "String ** Array");
 	equal(code[i++].type, TypeError, "String % Array");
-	
+
 	equal(code[i++].type, TypeError, "String & Array");
 	equal(code[i++].type, TypeError, "String | Array");
 	equal(code[i++].type, TypeError, "String ^ Array");
 	equal(code[i++].type, TypeError, "String << Array");
 	equal(code[i++].type, TypeError, "String >> Array");
 	equal(code[i++].type, TypeError, "String >>> Array");
-	
+
 	equal(code[i++].type, TypeError, "String += Array");
 	equal(code[i++].type, TypeError, "String -= Array");
 	equal(code[i++].type, TypeError, "String *= Array");
@@ -1161,14 +1160,14 @@ test("String Operations - String and Boolean", function() {
 	equal(code[i++].type, TypeError, "String / Boolean");
 	equal(code[i++].type, TypeError, "String ** Boolean");
 	equal(code[i++].type, TypeError, "String % Boolean");
-	
+
 	equal(code[i++].type, TypeError, "String & Boolean");
 	equal(code[i++].type, TypeError, "String | Boolean");
 	equal(code[i++].type, TypeError, "String ^ Boolean");
 	equal(code[i++].type, TypeError, "String << Boolean");
 	equal(code[i++].type, TypeError, "String >> Boolean");
 	equal(code[i++].type, TypeError, "String >>> Boolean");
-	
+
 	equal(code[i++].type, TypeError, "String += Boolean");
 	equal(code[i++].type, TypeError, "String -= Boolean");
 	equal(code[i++].type, TypeError, "String *= Boolean");
@@ -1187,14 +1186,14 @@ test("String Operations - String and Date", function() {
 	equal(code[i++].type, TypeError, "String / Date");
 	equal(code[i++].type, TypeError, "String ** Date");
 	equal(code[i++].type, TypeError, "String % Date");
-	
+
 	equal(code[i++].type, TypeError, "String & Date");
 	equal(code[i++].type, TypeError, "String | Date");
 	equal(code[i++].type, TypeError, "String ^ Date");
 	equal(code[i++].type, TypeError, "String << Date");
 	equal(code[i++].type, TypeError, "String >> Date");
 	equal(code[i++].type, TypeError, "String >>> Date");
-	
+
 	equal(code[i++].type, TypeError, "String += Date");
 	equal(code[i++].type, TypeError, "String -= Date");
 	equal(code[i++].type, TypeError, "String *= Date");
@@ -1213,14 +1212,14 @@ test("String Operations - String and Function", function() {
 	equal(code[i++].type, TypeError, "String / Function");
 	equal(code[i++].type, TypeError, "String ** Function");
 	equal(code[i++].type, TypeError, "String % Function");
-	
+
 	equal(code[i++].type, TypeError, "String & Function");
 	equal(code[i++].type, TypeError, "String | Function");
 	equal(code[i++].type, TypeError, "String ^ Function");
 	equal(code[i++].type, TypeError, "String << Function");
 	equal(code[i++].type, TypeError, "String >> Function");
 	equal(code[i++].type, TypeError, "String >>> Function");
-	
+
 	equal(code[i++].type, TypeError, "String += Function");
 	equal(code[i++].type, TypeError, "String -= Function");
 	equal(code[i++].type, TypeError, "String *= Function");
@@ -1239,14 +1238,14 @@ test("String Operations - String and Number", function() {
 	equal(code[i++].type, TypeError, "String / Number");
 	equal(code[i++].type, TypeError, "String ** Number");
 	equal(code[i++].type, TypeError, "String % Number");
-	
+
 	equal(code[i++].type, TypeError, "String & Number");
 	equal(code[i++].type, TypeError, "String | Number");
 	equal(code[i++].type, TypeError, "String ^ Number");
 	equal(code[i++].type, TypeError, "String << Number");
 	equal(code[i++].type, TypeError, "String >> Number");
 	equal(code[i++].type, TypeError, "String >>> Number");
-	
+
 	equal(code[i++].type, TypeError, "String += Number");
 	equal(code[i++].type, TypeError, "String -= Number");
 	equal(code[i++].type, TypeError, "String *= Number");
@@ -1265,14 +1264,14 @@ test("String Operations - String and Object", function() {
 	equal(code[i++].type, TypeError, "String / Object");
 	equal(code[i++].type, TypeError, "String ** Object");
 	equal(code[i++].type, TypeError, "String % Object");
-	
+
 	equal(code[i++].type, TypeError, "String & Object");
 	equal(code[i++].type, TypeError, "String | Object");
 	equal(code[i++].type, TypeError, "String ^ Object");
 	equal(code[i++].type, TypeError, "String << Object");
 	equal(code[i++].type, TypeError, "String >> Object");
 	equal(code[i++].type, TypeError, "String >>> Object");
-	
+
 	equal(code[i++].type, TypeError, "String += Object");
 	equal(code[i++].type, TypeError, "String -= Object");
 	equal(code[i++].type, TypeError, "String *= Object");
@@ -1291,14 +1290,14 @@ test("String Operations - String and RegExp", function() {
 	equal(code[i++].type, TypeError, "String / RegExp");
 	equal(code[i++].type, TypeError, "String ** RegExp");
 	equal(code[i++].type, TypeError, "String % RegExp");
-	
+
 	equal(code[i++].type, TypeError, "String & RegExp");
 	equal(code[i++].type, TypeError, "String | RegExp");
 	equal(code[i++].type, TypeError, "String ^ RegExp");
 	equal(code[i++].type, TypeError, "String << RegExp");
 	equal(code[i++].type, TypeError, "String >> RegExp");
 	equal(code[i++].type, TypeError, "String >>> RegExp");
-	
+
 	equal(code[i++].type, TypeError, "String += RegExp");
 	equal(code[i++].type, TypeError, "String -= RegExp");
 	equal(code[i++].type, TypeError, "String *= RegExp");

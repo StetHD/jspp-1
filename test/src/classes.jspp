@@ -1,0 +1,2350 @@
+/******************************BASIC REQUIREMENTS******************************/
+test("Basic Requirements", function() {
+	ok(
+		function() {
+			class foo {}
+		}
+
+		, "Class Declaration"
+	);
+	ok(
+		function() {
+			var x = class x {};
+		}
+
+		, "Class Expression"
+	);
+	ok(
+		function() {
+			var x = class {};
+		}
+
+		, "Anonymous Classes"
+	);
+	ok(
+		function() {
+			class foo {
+				class bar {
+				}
+			}
+		}
+
+		, "Nested Classes"
+	);
+	ok(
+		function() {
+			class foo {
+			}
+			class bar extends foo {
+			}
+		}
+
+		, "Subclasses"
+	);
+	ok(
+		function() {
+			new class foo {}
+		}
+
+		, "Singletons"
+	);
+	ok(
+		function() {
+			new class {}
+		}
+
+		, "Anonymous Singletons"
+	);
+	equal(
+		(function() {
+			return (class {
+				public function Constructor() {
+					return true;
+				}
+			})();
+		})()
+
+		, true
+		, "(class {...})() calls constructor"
+	);
+	ok(
+		function() {
+			class foo{
+				public var bar;
+			}
+		}
+
+		, "Variable Declarations - var"
+	);
+	ok(
+		function() {
+			class foo {
+				public function bar(){}
+			}
+		}
+
+		, "Function Declarations"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var baz = function() {
+					return bar();
+				};
+
+				public function bar() {
+					return true;
+				}
+			}
+
+			return (new foo).baz()
+		})()
+
+		, true
+		, "Function declarations (resolves even if declaration comes later)"
+	);
+});
+
+/**************************STATIC AND INSTANCE MEMBERS**************************/
+test("Static and Instance Members", function() {
+	ok(
+		function() {
+			class foo {
+				static var bar = true;
+			}
+		}
+
+		, "static Keyword"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = true;
+			}
+
+			return foo.bar;
+		})()
+
+		, true
+		, "Static variables"
+	);
+	equal(
+		(function() {
+			class foo {
+				static function bar() {
+					return true;
+				}
+			}
+			return foo.bar();
+		})()
+
+		, true
+		, "Static methods"
+	);
+
+	ok(
+		function() {
+			class foo {
+			}
+
+			new foo();
+		}
+
+		, "Create class instance"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = true;
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "Instance variables"
+	);
+	equal(
+		(function() {
+			class foo {
+				public function bar() {
+					return true;
+				}
+			}
+
+			return (new foo).bar();
+		})()
+
+		, true
+		, "Instance methods"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = true;
+			}
+
+			return foo.bar;
+		})()
+
+		, void 0
+		, "Instance variables cannot be accessed without instance"
+	);
+	raises(
+		function() {
+			class foo {
+				public function bar() {
+					return true;
+				}
+			}
+
+			return foo.bar();
+		}
+
+		, TypeError
+		, "Instance methods cannot be accessed without instance"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = true;
+			}
+
+			return (new foo).bar === (new foo).bar
+		})()
+
+		, true
+		, "Instance pure method equality"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				private static function bar() {
+				}
+				public static function baz() {
+				}
+				protected static function qux() {
+				}
+			}
+
+			return typeof foo.baz;
+		})()
+
+		, "function"
+		, "public static can be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static function bar() {
+				}
+				public static function baz() {
+				}
+				protected static function qux() {
+				}
+			}
+
+			return typeof foo.bar;
+		})()
+
+		, "undefined"
+		, "private static cannot be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static function bar() {
+				}
+				public static function baz() {
+				}
+				protected static function qux() {
+				}
+			}
+
+			return typeof foo.qux;
+		})()
+
+		, "undefined"
+		, "protected static cannot be accessed outside class"
+	);
+});
+
+/*******************************ACCESS MODIFIERS*******************************/
+test("Access Modifiers", function() {
+	ok(
+		function() {
+			class foo {
+				public var bar = 1;
+			}
+		}
+
+		, "public Keyword"
+	);
+	ok(
+		function() {
+			class foo {
+				private var bar = 1;
+			}
+		}
+
+		, "private Keyword"
+	);
+	ok(
+		function() {
+			class foo {
+				protected var bar = 1;
+			}
+		}
+
+		, "protected Keyword"
+	);
+
+	equal(
+		(function() {
+			return (class {
+				private var bar = true;
+
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, true
+		, "Private variable can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				private var bar = 1;
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Private variable cannot be accessed outside class"
+	);
+	raises(
+		function() {
+			class foo {
+				private var bar = 1;
+			}
+
+			return (class baz : foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Private variable cannot be accessed by subclass"
+	);
+	raises(
+		function() {
+			class foo {
+				private var bar = true;
+
+				static var baz = class {
+					public function Constructor() {
+						return bar;
+					}
+				};
+			}
+
+			return foo.baz();
+		}
+
+		, ReferenceError
+		, "Private variable cannot be accessed by nested class"
+	);
+	equal(
+		(function() {
+			return (class {
+				private function bar() {
+					return true;
+				}
+
+				public function Constructor() {
+					return bar();
+				}
+			})();
+		})()
+
+		, true
+		, "Private method can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				private function bar() {
+					return 1;
+				}
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Private method cannot be accessed outside class"
+	);
+	raises(
+		function() {
+			class foo {
+				private function bar() {
+					return 1;
+				}
+			}
+
+			return (class baz : foo {
+				public function Constructor() {
+					return bar();
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Private method cannot be accessed by subclass"
+	);
+	raises(
+		function() {
+			class foo {
+				private function bar() {
+					return true;
+				}
+
+				static var baz = class {
+					public function Constructor() {
+						return bar();
+					}
+				};
+			}
+
+			return foo.baz();
+		}
+
+		, ReferenceError
+		, "Private method cannot be accessed by nested class"
+	);
+
+	equal(
+		(function() {
+			return (class {
+				public var bar = true;
+
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, true
+		, "Public variable can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				public var bar = true;
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Public variable cannot be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = true;
+			}
+
+			return (class extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, true
+		, "Public variable can be accessed inside subclass"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = true;
+
+				class baz {
+					static var qux = bar;
+				}
+
+				public function quux() {
+					return baz.qux;
+				}
+			}
+
+			return (new foo).quux();
+		})()
+
+		, true
+		, "Public variable can be accessed inside nested class"
+	);
+	equal(
+		(function() {
+			return (class {
+				public function bar() {
+					return true;
+				}
+
+				public function Constructor() {
+					return bar();
+				}
+			})();
+		})()
+
+		, true
+		, "Public method can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				public function bar() {
+					return true;
+				}
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Public method cannot be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				public function bar() {
+					return true;
+				}
+			}
+
+			return (class extends foo {
+				public function Constructor() {
+					return bar();
+				}
+			})();
+		})()
+
+		, true
+		, "Public method can be accessed inside subclass"
+	);
+	equal(
+		(function() {
+			class foo {
+				public function bar() {
+					return true;
+				}
+
+				class baz {
+					static var qux = bar();
+				}
+
+				public function quux() {
+					return baz.qux;
+				}
+			}
+
+			return (new foo).quux();
+		})()
+
+		, true
+		, "Public method can be accessed inside nested class"
+	);
+
+	equal(
+		(function() {
+			return (class {
+				protected var bar = true;
+
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, true
+		, "Protected variable can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				protected var bar = true;
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Protected variable cannot be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var bar = true;
+			}
+
+			return (class extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, true
+		, "Protected variable can be accessed inside subclass"
+	);
+	equal(
+		(function() {
+			return (class {
+				protected var bar = true;
+
+				class foo {
+					public function Constructor() {
+						return [bar];
+					}
+				}
+
+				public function Constructor() {
+					return (new foo)[0];
+				}
+			})();
+		})()
+
+		, true
+		, "Protected variable can be accessed inside nested class"
+	);
+	equal(
+		(function() {
+			return (class {
+				protected function bar() {
+					return true;
+				}
+
+				public function Constructor() {
+					return bar();
+				}
+			})();
+		})()
+
+		, true, "Protected method can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				protected function bar() {
+					return true;
+				}
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Protected method cannot be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected function bar() {
+					return true;
+				}
+			}
+
+			return (class extends foo {
+				public function Constructor() {
+					return bar();
+				}
+			})();
+		})()
+
+		, true
+		, "Protected method can be accessed inside subclass"
+	);
+	equal(
+		(class {
+			protected function bar() {
+				return true;
+			}
+
+			class foo {
+				public function Constructor() {
+					return [bar()];
+				}
+			}
+
+			public function Constructor() {
+				return (new foo)[0];
+			}
+		})()
+
+		, true
+		, "Protected method can be accessed inside nested class"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var baz = function() {
+					return bar();
+				};
+
+				public function bar() {
+					return true;
+				}
+			}
+
+			return (new foo).baz();
+		})()
+
+		, true
+		, "Function declarations (resolves even if declaration comes later) - Public"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var baz = function() {
+					return bar();
+				};
+
+				protected function bar() {
+					return true;
+				}
+			}
+
+			return (new foo).baz();
+		})()
+
+		, true
+		, "Function declarations (resolves even if declaration comes later) - Protected"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var baz = function() {
+					return bar();
+				};
+
+				private function bar() {
+					return true;
+				}
+			}
+
+			return (new foo).baz();
+		})()
+
+		, true
+		, "Function declarations (resolves even if declaration comes later) - Private"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					public var baz = true;
+
+					public function getBaz() { return baz }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Public variable of nested class resolves correctly inside nested class"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					protected var baz = true;
+
+					public function getBaz() { return baz }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Protected variable of nested class resolves correctly inside nested class"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					private var baz = true;
+
+					public function getBaz() { return baz }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Private variable of nested class resolves correctly inside nested class"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					public function baz(){ return true }
+
+					public function getBaz() { return baz() }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Public function declaration of nested class resolves correctly inside nested class"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					protected function baz(){ return true }
+
+					public function getBaz() { return baz() }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Protected function declaration of nested class resolves correctly inside nested class"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					private function baz(){ return true }
+
+					public function getBaz() { return baz() }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Private function declaration of nested class resolves correctly inside nested class"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					public function getBaz() { return baz() }
+
+					public function baz(){ return true }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Public function declaration of nested class resolves correctly inside nested class (resolves even if declaration comes later)"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					public function getBaz() { return baz() }
+
+					protected function baz(){ return true }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Protected function declaration of nested class resolves correctly inside nested class (resolves even if declaration comes later)"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = class {
+					public function getBaz() { return baz() }
+
+					private function baz(){ return true }
+				};
+			}
+
+			return (new foo.bar).getBaz();
+		})()
+
+		, true
+		, "Private function declaration of nested class resolves correctly inside nested class (resolves even if declaration comes later)"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var baz = 1;
+
+				class bar {
+					protected var baz = 2;
+
+					public function setBaz(x) {
+						baz = x;
+					}
+				}
+
+				class qux extends bar {
+					public function getBaz() {
+						return baz;
+					}
+				}
+
+				public function getBaz() {
+					var quux = new qux;
+					quux.setBaz(3);
+
+					return quux.getBaz();
+				}
+			}
+
+			return (new foo).getBaz();
+		})()
+
+		, 3
+		, "Nested Class B extends Class A and overwrites private variable of Class A with protected variable. Nested Class C (extends Nested Class B) resolves protected variable correctly"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var baz = 1;
+
+				class bar {
+					protected var baz = 2;
+
+					public function setBaz(x) {
+						baz = x;
+					}
+				}
+
+				class qux extends bar {
+					public function getBaz() {
+						return baz;
+					}
+				}
+
+				public function getBaz() {
+					var quux = new qux;
+					quux.setBaz(3);
+
+					return quux.getBaz();
+				}
+			}
+
+			return (new foo).getBaz();
+		})()
+
+		, 3
+		, "Nested Class B extends Class A and overwrites public variable of Class A with protected variable. Nested Class C (extends Nested Class B) resolves protected variable correctly"
+	);
+	equal(
+		(function() {
+			class foo {
+				private var baz = 1;
+
+				class bar {
+					protected var baz = 2;
+
+					public function setBaz(x) {
+						baz = x;
+					}
+				}
+
+				class qux extends bar {
+					public function getBaz() {
+						return baz;
+					}
+				}
+
+				public function getBaz() {
+					var quux = new qux;
+					quux.setBaz(3);
+
+					return quux.getBaz();
+				}
+			}
+
+			return (new foo).getBaz();
+		})()
+
+		, 3
+		, "Nested Class B extends Class A and overwrites protected variable of Class A with protected variable. Nested Class C (extends Nested Class B) resolves protected variable correctly"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var baz = 1;
+
+				class bar {
+					public var baz = 2;
+
+					public function setBaz(x) {
+						baz = x;
+					}
+				}
+
+				class qux extends bar {
+					public function getBaz() {
+						return baz;
+					}
+				}
+
+				public function getBaz() {
+					var quux = new qux;
+					quux.setBaz(3);
+
+					return quux.getBaz();
+				}
+			}
+
+			return (new foo).getBaz();
+		})()
+
+		, 3
+		, "Nested Class B extends Class A and overwrites private variable of Class A with public variable. Nested Class C (extends Nested Class B) resolves public variable correctly"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var baz = 1;
+
+				class bar {
+					public var baz = 2;
+
+					public function setBaz(x) {
+						baz = x;
+					}
+				}
+
+				class qux extends bar {
+					public function getBaz() {
+						return baz;
+					}
+				}
+
+				public function getBaz() {
+					var quux = new qux;
+					quux.setBaz(3);
+
+					return quux.getBaz();
+				}
+			}
+
+			return (new foo).getBaz();
+		})()
+
+		, 3
+		, "Nested Class B extends Class A and overwrites public variable of Class A with public variable. Nested Class C (extends Nested Class B) resolves public variable correctly"
+	);
+	equal(
+		(function() {
+			class foo {
+				private var baz = 1;
+
+				class bar {
+					public var baz = 2;
+
+					public function setBaz(x) {
+						baz = x;
+					}
+				}
+
+				class qux extends bar {
+					public function getBaz() {
+						return baz;
+					}
+				}
+
+				public function getBaz() {
+					var quux = new qux;
+					quux.setBaz(3);
+
+					return quux.getBaz();
+				}
+			}
+
+			return (new foo).getBaz();
+		})()
+
+		, 3
+		, "Nested Class B extends Class A and overwrites protected variable of Class A with public variable. Nested Class C (extends Nested Class B) resolves public variable correctly"
+	);
+});
+
+/********************************SUPER KEYWORD*********************************/
+test("Super", function() {
+	ok(
+		function() {
+			class foo {
+				public var bar = 1;
+			}
+			class bar extends foo {
+				public var baz = super.bar;
+			}
+		}
+
+		, "super Keyword"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public function bar(){ return true }
+			}
+			class bar extends foo {
+				public var baz = super.bar;
+
+				public function Constructor() {
+					return baz;
+				}
+			}
+
+			return (new bar)();
+		})()
+
+		, true
+		, "Access superclass properties"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected function bar() { return true }
+			}
+			class baz extends foo {
+				public function qux() {
+					return super.bar();
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "Access superclass protected method (dot accessor)"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var bar = true;
+			}
+			class baz extends foo {
+				public function qux() {
+					return super.bar;
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "Access superclass protected field (dot accessor)"
+	);
+});
+
+/*************************CONSTRUCTORS / DESTRUCTORS***************************/
+test("Constructors / Destructors", function() {
+	ok(
+		function() {
+			class foo {
+				public function Constructor() {
+				}
+			}
+		}
+
+		, "Constructor"
+	);
+	ok(
+		function() {
+			class foo {
+				public function Destructor() {
+				}
+			}
+		}
+
+		, "Destructor"
+	);
+
+	equal(
+		(class {
+			public function Constructor(){
+				return true;
+			}
+		})()
+
+		, true
+		, "Public Constructor"
+	);
+	equal(
+		(function() {
+			class foo{
+				private function Constructor(){
+					return true;
+				}
+
+				static var bar = class {
+					public function Constructor() {
+						return new foo;
+					}
+				}
+			}
+
+			return foo.bar;
+		})()
+
+		, true
+		, "Private Constructor"
+	);
+	equal(
+		(class {
+			private var foo = 1;
+			static function Constructor() {
+				foo = true;
+			}
+			public function Constructor(){
+				return foo;
+			}
+		})()
+
+		, true
+		, "Static Constructor"
+	);
+});
+
+/******************************METHOD OVERLOADING******************************/
+test("Method Overloading", function() {
+	deepEqual(
+		(function() {
+			class foo {
+				private function bar() {
+					return [true];
+				}
+				private function bar(x) {
+					return [false];
+				}
+
+				public function baz() {
+					return [bar(), bar(1)]
+				}
+			}
+
+			var _foo = new foo();
+
+			return _foo.baz();
+		})()
+
+		, [[true], [false]]
+		, "Method Overloading - private Keyword"
+	);
+	deepEqual(
+		(function() {
+			class foo {
+				public function bar() {
+					return [true];
+				}
+				public function bar(x) {
+					return [false];
+				}
+			}
+
+			var _foo = new foo();
+
+			return [_foo.bar(), _foo.bar(1)];
+		})()
+
+		, [[true], [false]]
+		, "Method Overloading - public Keyword"
+	);
+	deepEqual(
+		(function() {
+			class foo {
+				protected function bar() {
+					return [true];
+				}
+				protected function bar(x) {
+					return [false];
+				}
+			}
+
+			class widget extends foo {
+				public function baz() {
+					return [bar(), bar(1)]
+				}
+			}
+
+			var _widget = new widget();
+
+			return _widget.baz();
+		})()
+
+		, [[true], [false]]
+		, "Method Overloading - protected Keyword"
+	);
+	deepEqual(
+		(function() {
+			class foo {
+				static function bar() {
+					return [true];
+				}
+				static function bar(x) {
+					return [false];
+				}
+			}
+
+			return [foo.bar(), foo.bar(1)];
+		})()
+
+		, [[true], [false]]
+		, "Method Overloading - static Keyword"
+	);
+	deepEqual(
+		(function() {
+			class foo {
+				public function Constructor() {
+					return [true];
+				}
+				public function Constructor(x) {
+					return [false];
+				}
+			}
+
+			return [new foo, new foo(1)];
+		})()
+
+		, [[true], [false]]
+		, "Constructor Overloading"
+	);
+});
+
+/*********************************THIS KEYWORD*********************************/
+test("this Keyword", function() {
+	equal(
+		(function() {
+			class foo {
+				public var b = true;
+
+				public function fooMethod() {
+					return this.b;
+				}
+			}
+
+			class bar {
+				public function barMethod(method) {
+					return method();
+				}
+			}
+
+			var a = new foo();
+			var b = new bar();
+
+			return b.barMethod(a.fooMethod);
+		})()
+
+		, true
+		, "this keyword"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public function() {
+					this.bar = true;
+				}
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword creates public instance variable"
+	);
+	equal(
+		(function() {
+			class foo {
+				public function() {
+					this.bar = true;
+				}
+			}
+
+			return foo.bar;
+		})()
+
+		, void 0
+		, "this keyword creates public instance variable which cannot be accessed without an instance"
+	);
+	equal(
+		(function() {
+			class foo {
+				private var bar = false;
+				public function() {
+					this.bar = true;
+				}
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword creates public instance variable which overrides private variable"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = false;
+				public function() {
+					this.bar = true;
+				}
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword creates public instance variable which overrides public variable"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var bar = false;
+				public function() {
+					this.bar = true;
+				}
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword creates public instance variable which overrides protected variable"
+	);
+	equal(
+		(function() {
+			class foo {
+				private var bar = true;
+				public function() {
+					this.bar = bar;
+				}
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword resolves identifiers correctly when overriding a private variable"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = true;
+				public function() {
+					this.bar = bar;
+				}
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword resolves identifiers correctly when overriding a public variable"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var bar = true;
+				public function() {
+					this.bar = bar;
+				}
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword resolves identifiers correctly when overriding a protected variable"
+	);
+	equal(
+		(function() {
+			class foo {
+				private var bar = true;
+				public function() {
+					this.bar = bar;
+				}
+				public var bar = 10;
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword resolves identifiers correctly when overriding a private variable with redeclaration"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = 10;
+				public function() {
+					this.bar = bar;
+				}
+				public var bar = true;
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword resolves identifiers correctly when overriding a public variable with redeclaration"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var bar = true;
+				public function() {
+					this.bar = bar;
+				}
+				public var bar = 10;
+			}
+
+			return (new foo).bar;
+		})()
+
+		, true
+		, "this keyword resolves identifiers correctly when overriding a protected variable with redeclaration"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				static function bar() {
+					return this === foo;
+				}
+			}
+
+			return foo.bar();
+		})()
+
+		, true
+		, "this keyword resolves correctly for static methods"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var bar = function() {
+					return this === baz;
+				};
+			}
+
+			var baz = new foo;
+
+			return baz.bar();
+		})()
+
+		, true
+		, "this keyword is replaced with class instance for method of class (method created via 'var')"
+	);
+	equal(
+		(function() {
+			class foo {
+				public function bar() {
+					return this === baz;
+				}
+			}
+
+			var baz = new foo;
+
+			return baz.bar();
+		})()
+
+		, true
+		, "this keyword is replaced with class instance for method of class (method created via 'function')"
+	);
+	equal(
+		(function() {
+			var global = this;
+
+			class foo {
+				public var bar = function() {
+					function widget() {
+						return this === global;
+					}
+
+					return widget();
+				};
+			}
+
+			var baz = new foo;
+
+			return baz.bar();
+		}).call(null)
+
+		, true
+		, "this keyword is NOT replaced with class instance for functions inside method of class (method created via 'var')"
+	);
+	equal(
+		(function() {
+			var global = this;
+
+			class foo {
+				public function bar() {
+					function widget() {
+						return this === global;
+					}
+
+					return widget();
+				}
+			}
+
+			var baz = new foo;
+
+			return baz.bar();
+		}).call(null)
+
+		, true
+		, "this keyword is NOT replaced with class instance for functions inside method of class (method created via 'function')"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = function() {
+					class widget {
+						public var qux = function() {
+							return this === baz;
+						};
+					}
+
+					var baz = new widget;
+
+					return baz.qux();
+				};
+			}
+
+			return (new foo).bar();
+		})()
+
+		, true
+		, "this keyword is replaced with class instance for method of nested class (method created via 'var')"
+	);
+	equal(
+		(function() {
+			class foo {
+				public function bar() {
+					class widget {
+						public function qux() {
+							return this === baz;
+						};
+					}
+
+					var baz = new widget;
+
+					return baz.qux();
+				};
+			}
+
+			return (new foo).bar();
+		})()
+
+		, true
+		, "this keyword is replaced with class instance for method of nested class (method created via 'function')"
+	);
+	equal(
+		(function() {
+			var global = this;
+
+			class foo {
+				public var bar = function() {
+					class widget {
+						public var qux = function() {
+							function quux() {
+								return this === global;
+							}
+
+							return quux();
+						};
+					}
+
+					var baz = new widget;
+
+					return baz.qux();
+				};
+			}
+
+			return (new foo).bar();
+		}).call(null)
+
+		, true
+		, "this keyword is NOT replaced with class instance for functions inside method of nested class (method created via 'var')"
+	);
+	equal(
+		(function() {
+			var global = this;
+
+			class foo {
+				public function bar() {
+					class widget {
+						public function qux() {
+							function quux() {
+								return this === global;
+							}
+
+							return quux();
+						};
+					}
+
+					var baz = new widget;
+
+					return baz.qux();
+				};
+			}
+
+			return (new foo).bar();
+		}).call(null)
+
+		, true
+		, "this keyword is NOT replaced with class instance for functions inside method of nested class (method created via 'function')"
+	);
+
+	//TODO
+	/*equal(
+		(function() {
+
+		})()
+
+		, true
+		, "this keyword resolves correctly for private variables"
+	);
+	equal(
+		(function() {
+
+		})()
+
+		, true
+		, "this keyword resolves correctly for private methods"
+	);
+	equal(
+		(function() {
+
+		})()
+
+		, true
+		, "this keyword resolves correctly for protected variables"
+	);
+	equal(
+		(function() {
+
+		})()
+
+		, true
+		, "this keyword resolves correctly for protected methods"
+	);*/
+});
+
+/****************************DUPLICATE DECLARATIONS****************************/
+test("Duplicate Declarations", function() {
+	ok(
+		function() {
+			class foo {
+			}
+
+			class foo {
+			}
+		}
+
+		, "Multiple Class Declarations"
+	);
+	ok(
+		function() {
+			class foo {
+			}
+
+			var foo = class {
+			};
+		}
+
+		, "Duplicate class declaration via both declaration and expression"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			return (new foo).bar;
+		})()
+
+		, 2
+		, "Duplicate class declaration results in last declaration being used"
+	);
+
+	equal(
+		(function() {
+			var result = (new foo).bar;
+
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			return result;
+		})()
+
+		, 2
+		, "Duplicate class declaration results in last declaration being used (class declarations AFTER instantiation)"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			var foo = class {
+				public var bar = 3;
+			};
+
+			return (new foo).bar;
+		})()
+
+		, 3
+		, "Multiple duplicate class declaration results in last declaration being used (two statements, one expression)"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var bar = 1;
+			}
+
+			var foo = class {
+				public var bar = 2;
+			};
+
+			var foo = class {
+				public var bar = 3;
+			};
+
+			return (new foo).bar;
+		})()
+
+		, 3
+		, "Multiple duplicate class declaration results in last declaration being used (one statement, two expressions)"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			var foo = class {
+				public var bar = 3;
+			};
+
+			var foo = class {
+				public var bar = 4;
+			};
+
+			return (new foo).bar;
+		})()
+
+		, 4
+		, "Multiple duplicate class declaration results in last declaration being used (two statements, two expressions)"
+	);
+
+	equal(
+		(function() {
+			var result = (new foo).bar;
+
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			var foo = class {
+				public var bar = 3;
+			};
+
+			return result;
+		})()
+
+		, 2
+		, "Multiple duplicate class declaration results in last declaration being used (two statements, one expression, class declarations AFTER instantiation)"
+	);
+
+	equal(
+		(function() {
+			var result = (new foo).bar;
+
+			class foo {
+				public var bar = 1;
+			}
+
+			var foo = class {
+				public var bar = 2;
+			};
+
+			var foo = class {
+				public var bar = 3;
+			};
+
+			return result;
+		})()
+
+		, 1
+		, "Multiple duplicate class declaration results in last declaration being used (one statement, two expressions, class declarations AFTER instantiation)"
+	);
+
+	equal(
+		(function() {
+			var result = (new foo).bar;
+
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			var foo = class {
+				public var bar = 3;
+			};
+
+			var foo = class {
+				public var bar = 4;
+			};
+
+			return result;
+		})()
+
+		, 2
+		, "Multiple duplicate class declaration results in last declaration being used (two statements, two expressions, class declarations AFTER instantiation)"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			return (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, 2
+		, "Identifier resolution: Duplicate class declarations results in last declaration being used (two statements)"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				public var bar = 1;
+			}
+
+			var foo = class {
+				public var bar = 2;
+			};
+
+			return (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, 2
+		, "Identifier resolution: Duplicate class declarations results in last declaration being used (one statement before one expression)"
+	);
+
+	equal(
+		(function() {
+			var foo = class {
+				public var bar = 1;
+			};
+
+			class foo {
+				public var bar = 2;
+			}
+
+			return (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		})()
+
+		, 1
+		, "Identifier resolution: Duplicate class declarations results in last declaration being used (one expression before one statement)"
+	);
+
+	equal(
+		(function() {
+			result = (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+
+			class foo {
+				public var bar = 1;
+			}
+
+			class foo {
+				public var bar = 2;
+			}
+
+			return result;
+		})()
+
+		, 2
+		, "Identifier resolution: Duplicate class declarations results in last declaration being used (two statements, class declarations AFTER instantiation)"
+	);
+
+	equal(
+		(function() {
+			result = (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+
+			class foo {
+				public var bar = 1;
+			}
+
+			var foo = class {
+				public var bar = 2;
+			};
+
+			return result;
+		})()
+
+		, 1
+		, "Identifier resolution: Duplicate class declarations results in last declaration being used (one statement before one expression, class declarations AFTER instantiation)"
+	);
+
+	equal(
+		(function() {
+			result = (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+
+			var foo = class {
+				public var bar = 1;
+			};
+
+			class foo {
+				public var bar = 2;
+			}
+
+			return result;
+		})()
+
+		, 2
+		, "Identifier resolution: Duplicate class declarations results in last declaration being used (one expression before one statement, class declarations AFTER instantiation)"
+	);
+});
+
+/********************************MISCELLANEOUS*********************************/
+test("Miscellaneous", function() {
+	raises(
+		function() {
+			var foo = new class {};
+
+			return new foo;
+		}
+
+		, TypeError
+		, "Singleton cannot be instantiated"
+	);
+	equal(
+		(function() {
+			class foo {
+				private var bar = (function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to instance variable (private)"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = (function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to instance variable (public)"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var bar = (function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to instance variable (protected)"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = (function() {
+					return true
+				})();
+			}
+
+			return foo.bar;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable (static only)"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static var bar = (function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable (private static)"
+	);
+	equal(
+		(function() {
+			class foo {
+				public static var bar = (function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable (public static)"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected static var bar = (function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable (protected static)"
+	);
+	equal(
+		(function() {
+			class foo {
+				private var bar = (1, function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to instance variable with comma operator (private)"
+	);
+	equal(
+		(function() {
+			class foo {
+				public var bar = (1, function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to instance variable with comma operator (public)"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected var bar = (1, function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to instance variable with comma operator (protected)"
+	);
+	equal(
+		(function() {
+			class foo {
+				static var bar = (1, function() {
+					return true
+				})();
+			}
+
+			return foo.bar;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable with comma operator (static only)"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static var bar = (1, function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable with comma operator (private static)"
+	);
+	equal(
+		(function() {
+			class foo {
+				public static var bar = (1, function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable with comma operator (public static)"
+	);
+	equal(
+		(function() {
+			class foo {
+				protected static var bar = (1, function() {
+					return true
+				})();
+
+				public var baz = bar;
+			}
+
+			return (new foo).baz;
+		})()
+
+		, true
+		, "Self-executing function assigned to static variable with comma operator (protected static)"
+	);
+	equal(
+		(function() {
+			class foo {
+				public function bar() {
+					return true;
+				}
+
+				public var baz = function() {
+					return bar();
+				};
+			}
+
+			return (new foo).baz();
+		})()
+
+		, true
+		, "Function expression can call function declaration inside class without this keyword"
+	);
+});

@@ -6,6 +6,7 @@ Alpha 0.014
 * Fixed global wrapper function
 * Automatically "break" each case in a switch statement
 * Switch statements now support comma-separated cases
+* Unit test refactoring
 
 1/29/12 - Alpha 0.013
 --------
