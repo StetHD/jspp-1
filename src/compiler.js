@@ -665,7 +665,9 @@ compiler.prototype.compile = function (ast) {
 					if (j && j.id && j.id === ast.extends) {
 						superClass = j;
 						superClassId = i;
-						break;
+
+						//Don't "break" so we always get the latest class
+						//definition (e.g. in case of duplicates)
 					}
 				}
 			}
@@ -2218,7 +2220,9 @@ compiler.prototype.compile = function (ast) {
 											_this.classes[i].id == currentItem.__SUPER__) {
 											currentChainItem = i;
 											foundSuper = true;
-											break;
+
+											//Don't "break" in the event of
+											//duplicate class declarations
 										}
 									}
 
