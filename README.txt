@@ -88,9 +88,10 @@ typesys/ - Pluggable type systems
 typesys/strict.js - Strong, static typing for JavaScript++
 
 test/ - Unit tests
-test/qunit.js - QUnit JS file
-test/qunit.css - QUnit CSS file
+test/lib - Unit test libraries and modules
+test/src - Source code for unit tests
 test/classes.html - Unit tests for classes
+test/conditionals.html - Unit tests for conditionals
 test/scopes.html - Unit tests for scopes
 test/typesys-strict.html - Unit tests for #typesys strict
 
