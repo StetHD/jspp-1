@@ -141,7 +141,10 @@ function ready () {
 		errorCode = errorCode.split(/[\r\n]/gm);
 
 		//Get error character relative to error line
-		var errorLineChar = e.cursor - errorCode.slice(0, lineno).join("\n").length;
+		var errorLineChar = Math.max(
+			e.cursor - errorCode.slice(0, lineno).join("\n").length,
+			-1
+		);
 
 		//Format error code
 		errorCode = errorCode.map(function(lineCode, index) {
