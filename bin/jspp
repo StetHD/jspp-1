@@ -9,6 +9,14 @@ function jsparse () {
 	return jspp.narcissus.jsparse.apply(jspp.narcissus, arguments);
 }
 
+var format = {
+	BOLD : '\u001b[0;1m',
+	GREEN: '\u001b[0;32m',
+	RED  : '\u001b[0;31m',
+	REDBG: '\u001b[0;41m',
+	RESET: '\u001b[0m'
+};
+
 var args = paramon.readFormat(process.argv, {
 	name:	"js++",
 	usage:	"js++ file(s) [options]",
@@ -49,11 +57,15 @@ var args = paramon.readFormat(process.argv, {
 });
 
 args.debug || process.on('uncaughtException', function (e) {
-	console.error(e);
+	//Display the error message
+	console.log('[' + format.RED + 'ERROR' + format.RESET + '] ' + (e.message || ""));
+
 	process.exit(1);
 });
 
-if (!args['$!stray'].length) throw "No files specified.";
+if (!args['$!stray'].length) {
+	throw Error("No files specified.");
+}
 
 /* Heavy async soup */
 
@@ -74,27 +86,89 @@ function ready () {
 
 	var t = Date.now();
 
-	var c = new compiler(jsparse(code), {
-		debug:		args["debug"],
-		nowrap:		args["scope"],
-		warnings:	args["warnings"]
-	});
-
-	c.preprocess();
-
-	var output = c.compile();
-
 	var filename = args["output"] || '-';
 
-	console.log('[OK] ' + filename.replace(/\/\//, "/") + ': Compiled in ' + (Date.now() - t) + 'ms.');
+	//Wrap the compilation code in a try/catch so we can manually output
+	//compile errors
+	try {
+		var c = new compiler(jsparse(code), {
+			debug:		args["debug"],
+			nowrap:		args["scope"],
+			warnings:	args["warnings"]
+		});
 
-	if (filename === '-') {
-		console.log(output);
-	} else {
-		fs.writeFileSync(filename, output, args["encoding"] || 'UTF-8');
+		c.preprocess();
+
+		var output = c.compile();
+
+		console.log(
+			'[' + format.GREEN + 'OK' + format.RESET + '] ' +
+			filename.replace(/\/\//, "/") +
+			': Compiled in ' + (Date.now() - t) + 'ms.'
+		);
+
+		if (filename === '-') {
+			console.log(output);
+		} else {
+			fs.writeFileSync(filename, output, args["encoding"] || 'UTF-8');
+		}
+	}
+	//Catch compile errors and manually output, highlight, etc.
+	catch(e){
+		//Get error line number
+		var lineno = /lineno:\s*(\d+)/i.exec(e.message);
+		if (lineno && lineno.length == 2) {
+			lineno = (+lineno[1] - 1) || -1;
+		}
+		else {
+			lineno = -1;
+		}
+
+		//Format the error message
+		e.message = e.message.replace(/\s*filename:\s*,?/i, "");
+		e.message = e.message.replace(/lineno:\s*/i, format.BOLD + "line " + format.RESET);
+
+		//Display the error message
+		console.log(
+			'[' + format.RED + 'ERROR' + format.RESET + '] ' +
+			(e.message || "") +
+			format.BOLD + " char " + format.RESET + e.cursor + "\n"
+		);
+		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + filename);
+		console.log("        " + format.BOLD + "Source Code" + format.RESET + ": \n");
+
+		//Highlight the specific error character
+		var errorCode = e.source,
+			errorCodeBegin = errorCode.slice(0, e.cursor),
+			errorCodeHighlight = errorCode.slice(e.cursor, e.cursor + 1);
+			errorCodeEnd   = errorCode.slice(e.cursor + 1, errorCode.length);
+
+		errorCode = errorCodeBegin +
+					format.RED + errorCodeHighlight + format.RESET +
+					errorCodeEnd;
+
+		//Format error code
+		errorCode = errorCode.split(/[\r\n]/gm);
+		errorCode = errorCode.map(function(lineCode, index) {
+			var indent = "        ";
+
+			//Highlight the indent for error lines
+			if (index == lineno) {
+				indent = format.REDBG + "        " + format.RESET;
+			}
+
+			return indent + (index + 1) + ". " + lineCode;
+		});
+
+		//Get only the nearest lines for an error rather than outputting entire
+		//source code
+		var beginLine = Math.max(0, lineno - 5),
+			endLine = Math.min(lineno + 5, errorCode.length);
+		errorCode = errorCode.slice(beginLine, endLine);
+
+		console.log(errorCode.join("\n"));
 	}
 }
-
 
 var files = args['$!stray'].map(function(f){
 	var r = new Dummy;
