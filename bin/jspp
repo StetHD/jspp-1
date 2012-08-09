@@ -3,7 +3,7 @@
 var	fs		= require('fs'),
 	paramon		= require('paramon'),
 	jspp		= require('javascript-plusplus'),
-	compiler	= jspp.compiler;
+	compiler	= global.compiler;
 
 function jsparse () {
 	return jspp.narcissus.jsparse.apply(jspp.narcissus, arguments);
@@ -13,22 +13,16 @@ var args = paramon.readFormat(process.argv, {
 	name:	"js++",
 	usage:	"js++ file(s) [options]",
 	params:	[
-		/*{
-			name:		'execute',
-			args:		['--execute', '-e'],
-			desc:		'Instead of printing output, execute. You can optionally specify the command to execute it with.',
-			maxParams:	1,
-		},*/
 		{
-			name:		'wrap',
-			args:		['--closure', '-c'],
-			desc:		'Wrap in a function (closure).',
+			name:		'scope',
+			args:		['--scope', '-s'],
+			desc:		'Creates a scope.',
 			maxParams:	0,
 		},
 		{
 			name:		'debug',
 			args:		['--debug', '-d'],
-			desc:		'Debug mode.',
+			desc:		'Compile in debug mode.',
 			maxParams:	0,
 		},
 		{
@@ -78,21 +72,21 @@ function ready () {
 
 	var code = files.join('\n');
 
-	var t = +new Date;
+	var t = Date.now();
 
 	var c = new compiler(jsparse(code), {
 		debug:		args["debug"],
-		nowrap:		!args["wrap"],
-		warnings:	args["warnings"],
+		nowrap:		args["scope"],
+		warnings:	args["warnings"]
 	});
 
 	c.preprocess();
 
 	var output = c.compile();
 
-	console.error('Compiled in ' + (+new Date - t) + ' milliseconds.');
-
 	var filename = args["output"] || '-';
+
+	console.log('[OK] ' + filename.replace(/\/\//, "/") + ': Compiled in ' + (Date.now() - t) + 'ms.');
 
 	if (filename === '-') {
 		console.log(output);
