@@ -102,8 +102,8 @@ function ready () {
 		var output = c.compile();
 
 		console.log(
-			'[' + format.GREEN + 'OK' + format.RESET + '] ' +
-			filename.replace(/\/\//, "/") +
+			'[' + format.GREEN + 'OK' + format.RESET + '   ] ' +
+			format.BOLD + filename.replace(/\/\//, "/") + format.RESET +
 			': Compiled in ' + (Date.now() - t) + 'ms.'
 		);
 
@@ -128,15 +128,6 @@ function ready () {
 		e.message = e.message.replace(/\s*filename:\s*,?/i, "");
 		e.message = e.message.replace(/lineno:\s*/i, format.BOLD + "line " + format.RESET);
 
-		//Display the error message
-		console.log(
-			'[' + format.RED + 'ERROR' + format.RESET + '] ' +
-			(e.message || "") +
-			format.BOLD + " char " + format.RESET + e.cursor + "\n"
-		);
-		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + filename);
-		console.log("        " + format.BOLD + "Source Code" + format.RESET + ": \n");
-
 		//Highlight the specific error character
 		var errorCode = e.source,
 			errorCodeBegin = errorCode.slice(0, e.cursor),
@@ -147,8 +138,12 @@ function ready () {
 					format.RED + errorCodeHighlight + format.RESET +
 					errorCodeEnd;
 
-		//Format error code
 		errorCode = errorCode.split(/[\r\n]/gm);
+
+		//Get error character relative to error line
+		var errorLineChar = e.cursor - errorCode.slice(0, lineno).join("\n").length;
+
+		//Format error code
 		errorCode = errorCode.map(function(lineCode, index) {
 			var indent = "        ";
 
@@ -165,6 +160,15 @@ function ready () {
 		var beginLine = Math.max(0, lineno - 5),
 			endLine = Math.min(lineno + 5, errorCode.length);
 		errorCode = errorCode.slice(beginLine, endLine);
+
+		//Display the error message
+		console.log(
+			'[' + format.RED + 'ERROR' + format.RESET + '] ' +
+			(e.message || "") +
+			format.BOLD + " char " + format.RESET + errorLineChar + "\n"
+		);
+		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + filename);
+		console.log("        " + format.BOLD + "Source Code" + format.RESET + ": \n");
 
 		console.log(errorCode.join("\n"));
 	}
