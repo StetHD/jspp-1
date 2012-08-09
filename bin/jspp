@@ -167,7 +167,7 @@ function ready () {
 			(e.message || "") +
 			format.BOLD + " char " + format.RESET + errorLineChar + "\n"
 		);
-		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + filename);
+		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + args["$!stray"]);
 		console.log("        " + format.BOLD + "Source Code" + format.RESET + ": \n");
 
 		console.log(errorCode.join("\n"));
