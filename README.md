@@ -43,7 +43,7 @@ alert(foo);
 
 ### CLI
 
-1. Install via npm
+Install via npm:
 
 ```
 sudo npm install javascript-plusplus -g
@@ -55,50 +55,54 @@ or if you're building from sources, go to the main directory and do
 sudo npm install -g
 ```
 
-2. Example usages:
+Example usages:
 
 ```
 js++ file1.jspp file2.jspp -o out.js # compile the two files and save to file out.js
 cat file1.jspp file2.jspp | js++ - > out.js # same thing, but with stdio pipes
 ```
 
-A command-line REPL is not available for the current alpha.
+Once the CLI compiler has been installed, you can use the build script in bin/build.sh to recursively compile all JS++ files in a project directory:
 
-You can join us on IRC at #javascript++ on freenode and use jsppBot as a sort of REPL.
+1. Create a "src" folder in your project directory. This folder stores all your JavaScript++ source files (in .jspp format)
+2. Create a "build" folder. This folder stores the compiled files
+3. Copy bin/build.sh to your project root directory.
+4. Execute ```sh build.sh``` in the command-line to recursively compile all JS++ source files. The directory structure in the "src" folder will be maintained in your compiled "build" folder.
 
 File Descriptions
 -----------------
-bin/ - Executables and Binaries  
+bin/ - Executables and Binaries
 bin/jspp - CLI compiler
+bin/build.sh - Bash script for recursively compiling all JS++ files
 
-src/ - Parser and compiler source code  
-src/jsdefs.js - Lookup tables  
-src/jsparse.js - Lexer/parser  
-src/compiler.js - Code generator  
+src/ - Parser and compiler source code
+src/jsdefs.js - Lookup tables
+src/jsparse.js - Lexer/parser
+src/compiler.js - Code generator
 src/typed-es3.js - Emulation of typed ES3 environment.
 
-lib/ - Standard Library  
-lib/dom - DOM libraries  
-lib/jspp - JavaScript++ libraries.  Language only; does not manipulate or depend on host objects  
-lib/jspp/lang/es5.js - Incorporates ES5 features such as array extras and Function.prototype.bind  
-lib/jspp/lang/json2.js - JSON library  
+lib/ - Standard Library
+lib/dom - DOM libraries
+lib/jspp - JavaScript++ libraries.  Language only; does not manipulate or depend on host objects
+lib/jspp/lang/es5.js - Incorporates ES5 features such as array extras and Function.prototype.bind
+lib/jspp/lang/json2.js - JSON library
 lib/server - Server-side JavaScript libraries
 
-typesys/ - Pluggable type systems  
+typesys/ - Pluggable type systems
 typesys/strict.js - Strong, static typing for JavaScript++
 
-test/ - Unit tests  
-test/lib - Unit test libraries and modules  
-test/src - Source code for unit tests  
-test/classes.html - Unit tests for classes  
-test/conditionals.html - Unit tests for conditionals  
-test/scopes.html - Unit tests for scopes  
+test/ - Unit tests
+test/lib - Unit test libraries and modules
+test/src - Source code for unit tests
+test/classes.html - Unit tests for classes
+test/conditionals.html - Unit tests for conditionals
+test/scopes.html - Unit tests for scopes
 test/typesys-strict.html - Unit tests for #typesys strict
 
 Credits
 -------
-Brendan Eich - JavaScript & Narcissus  
-Guillaume Lathoud - v8/JSC port of Narcissus  
-Roger Poon - JavaScript++ Language  
-Jussi Kalliokoski - CLI Compiler  
+Brendan Eich - JavaScript & Narcissus
+Guillaume Lathoud - v8/JSC port of Narcissus
+Roger Poon - JavaScript++ Language
+Jussi Kalliokoski - CLI Compiler
 QUnit - QUnit testing framework
