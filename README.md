@@ -41,7 +41,7 @@ alert(foo);
 
 6. Open your browser's console to view the warnings and errors produced by the compiler.
 
-### CLI
+### Command Line
 
 Install via npm:
 
@@ -71,38 +71,38 @@ Once the CLI compiler has been installed, you can use the build script in bin/bu
 
 File Descriptions
 -----------------
-bin/ - Executables and Binaries
-bin/jspp - CLI compiler
+bin/ - Executables and Binaries  
+bin/jspp - CLI compiler  
 bin/build.sh - Bash script for recursively compiling all JS++ files
 
-src/ - Parser and compiler source code
-src/jsdefs.js - Lookup tables
-src/jsparse.js - Lexer/parser
-src/compiler.js - Code generator
+src/ - Parser and compiler source code  
+src/jsdefs.js - Lookup tables  
+src/jsparse.js - Lexer/parser  
+src/compiler.js - Code generator  
 src/typed-es3.js - Emulation of typed ES3 environment.
 
-lib/ - Standard Library
-lib/dom - DOM libraries
-lib/jspp - JavaScript++ libraries.  Language only; does not manipulate or depend on host objects
-lib/jspp/lang/es5.js - Incorporates ES5 features such as array extras and Function.prototype.bind
-lib/jspp/lang/json2.js - JSON library
+lib/ - Standard Library  
+lib/dom - DOM libraries  
+lib/jspp - JavaScript++ libraries.  Language only; does not manipulate or depend on host objects  
+lib/jspp/lang/es5.js - Incorporates ES5 features such as array extras and Function.prototype.bind  
+lib/jspp/lang/json2.js - JSON library  
 lib/server - Server-side JavaScript libraries
 
-typesys/ - Pluggable type systems
+typesys/ - Pluggable type systems  
 typesys/strict.js - Strong, static typing for JavaScript++
 
-test/ - Unit tests
-test/lib - Unit test libraries and modules
-test/src - Source code for unit tests
-test/classes.html - Unit tests for classes
-test/conditionals.html - Unit tests for conditionals
-test/scopes.html - Unit tests for scopes
+test/ - Unit tests  
+test/lib - Unit test libraries and modules  
+test/src - Source code for unit tests  
+test/classes.html - Unit tests for classes  
+test/conditionals.html - Unit tests for conditionals  
+test/scopes.html - Unit tests for scopes  
 test/typesys-strict.html - Unit tests for #typesys strict
 
 Credits
 -------
-Brendan Eich - JavaScript & Narcissus
-Guillaume Lathoud - v8/JSC port of Narcissus
-Roger Poon - JavaScript++ Language
-Jussi Kalliokoski - CLI Compiler
+Brendan Eich - JavaScript & Narcissus  
+Guillaume Lathoud - v8/JSC port of Narcissus  
+Roger Poon - JavaScript++ Language  
+Jussi Kalliokoski - CLI Compiler  
 QUnit - QUnit testing framework
