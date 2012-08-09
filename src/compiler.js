@@ -1464,7 +1464,7 @@ compiler.prototype.compile = function (ast) {
 			}
 
 			ast.statements.scopeId = "Stmt" + (++this.StatementBlocks);
-			this.NewScope(ast.statements.scopeId, Node);
+			this.NewScope(ast.statements.scopeId, ast);
 
 			if (ast.statements && ast.statements[0] &&
 				ast.statements[0].value && ast.statements[0].value != ":") {
@@ -1481,7 +1481,7 @@ compiler.prototype.compile = function (ast) {
 			out.push("default:");
 
 			ast.statements.scopeId = "Stmt" + (++this.StatementBlocks);
-			this.NewScope(ast.statements.scopeId, Node);
+			this.NewScope(ast.statements.scopeId, ast);
 
 			if (ast.statements && ast.statements[0] &&
 				ast.statements[0].value && ast.statements[0].value != ":") {
