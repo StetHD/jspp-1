@@ -68,6 +68,24 @@ Once the CLI compiler has been installed, you can use the build script in bin/bu
 2. Create a "build" folder. This folder stores the compiled files
 3. Copy bin/build.sh to your project root directory.
 4. Execute ```sh build.sh``` in the command-line to recursively compile all JS++ source files. The directory structure in the "src" folder will be maintained in your compiled "build" folder.
+5. Include the compiled .js files in your "build" folder
+
+###REPL
+
+Just start the JavaScript++ program with the ```js++``` command without specifying any input files to launch the JavaScript++ REPL.
+
+Example:
+
+```
+js++> [1...5].map(function(x) { return x ** 2 })
+[ 1,
+  4,
+  9,
+  16,
+  25 ]
+js++> a
+[ReferenceError] a is not defined
+```
 
 File Descriptions
 -----------------
@@ -79,7 +97,8 @@ src/ - Parser and compiler source code
 src/jsdefs.js - Lookup tables  
 src/jsparse.js - Lexer/parser  
 src/compiler.js - Code generator  
-src/typed-es3.js - Emulation of typed ES3 environment.
+src/typed-es3.js - Emulation of typed ES3 environment.  
+src/repl.js - JavaScript++ command-line REPL
 
 lib/ - Standard Library  
 lib/dom - DOM libraries  

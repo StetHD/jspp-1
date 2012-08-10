@@ -5,10 +5,12 @@ var	fs		= require('fs'),
 	jspp		= require('javascript-plusplus'),
 	compiler	= global.compiler;
 
+//Generate AST
 function jsparse () {
 	return jspp.narcissus.jsparse.apply(jspp.narcissus, arguments);
 }
 
+//CLI colors
 var format = {
 	BOLD : '\u001b[0;1m',
 	GREEN: '\u001b[0;32m',
@@ -17,6 +19,7 @@ var format = {
 	RESET: '\u001b[0m'
 };
 
+//Process arguments
 var args = paramon.readFormat(process.argv, {
 	name:	"js++",
 	usage:	"js++ file(s) [options]",
@@ -55,7 +58,9 @@ var args = paramon.readFormat(process.argv, {
 		}
 	],
 });
+var inputFiles = args['$!stray'];
 
+//Debugging
 args.debug || process.on('uncaughtException', function (e) {
 	//Display the error message
 	console.log('[' + format.RED + 'ERROR' + format.RESET + '] ' + (e.message || ""));
@@ -63,8 +68,9 @@ args.debug || process.on('uncaughtException', function (e) {
 	process.exit(1);
 });
 
-if (!args['$!stray'].length) {
-	throw Error("No files specified.");
+//If no input files, start the REPL
+if (!inputFiles.length) {
+	require("../src/repl")(jspp);
 }
 
 /* Heavy async soup */
@@ -82,7 +88,7 @@ function ready () {
 
 	/* All files ready, let's get going */
 
-	var code = files.join('\n');
+	var code = files.join('\n;');
 
 	var t = Date.now();
 
@@ -170,14 +176,14 @@ function ready () {
 			(e.message || "") +
 			format.BOLD + " char " + format.RESET + errorLineChar + "\n"
 		);
-		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + args["$!stray"]);
+		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + inputFiles);
 		console.log("        " + format.BOLD + "Source Code" + format.RESET + ": \n");
 
 		console.log(errorCode.join("\n"));
 	}
 }
 
-var files = args['$!stray'].map(function(f){
+var files = inputFiles.map(function(f){
 	var r = new Dummy;
 	if (f === '-') {
 		process.stdin.resume();

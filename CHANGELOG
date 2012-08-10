@@ -2,6 +2,7 @@ Alpha 0.014.1
 -----------
 * CLI Compiler pretty prints errors, highlights relevant line number and character
 * CLI Compiler updates and fixes
+* JavaScript++ command-line REPL
 * Bug fixes for switch statements
 
 8/7/12 - Alpha 0.014
