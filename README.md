@@ -1,4 +1,4 @@
-JavaScript++ Alpha 0.014
+JavaScript++ Alpha 0.014.1
 -----------------------
 
 JavaScript++ provides the same familiar C-style language syntax of JavaScript and brings modern language features such as classes; block scoping and constants; pluggable type systems and type safety; packages and modules; comprehensive standard libraries; enhanced regular expressions and PCRE; and more to JavaScript with almost no learning curve through an extended ES3 grammar.
@@ -68,7 +68,7 @@ Once the CLI compiler has been installed, you can use the build script in bin/bu
 2. Create a "build" folder. This folder stores the compiled files
 3. Copy bin/build.sh to your project root directory.
 4. Execute ```sh build.sh``` in the command-line to recursively compile all JS++ source files. The directory structure in the "src" folder will be maintained in your compiled "build" folder.
-5. Include the compiled .js files in your "build" folder
+5. Include the compiled .js files from your "build" folder in your project
 
 ###REPL
 
@@ -83,8 +83,8 @@ js++> [1...5].map(function(x) { return x ** 2 })
   9,
   16,
   25 ]
-js++> a
-[ReferenceError] a is not defined
+js++> foo
+[ReferenceError] foo is not defined
 ```
 
 File Descriptions
