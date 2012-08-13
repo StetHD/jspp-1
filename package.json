@@ -1,7 +1,7 @@
 {
 	"name":		"javascript-plusplus",
 	"author":	"Brendan Eich, Guillaume Lathoud, Roger Poon",
-	"version":	"0.011.0",
+	"version":	"0.014.1",
 	"description":	"javascript++",
 	"main":		"./jspp.js",
 	"repository":	{

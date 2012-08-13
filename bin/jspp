@@ -28,33 +28,39 @@ var args = paramon.readFormat(process.argv, {
 			name:		'scope',
 			args:		['--scope', '-s'],
 			desc:		'Creates a scope.',
-			maxParams:	0,
+			maxParams:	0
 		},
 		{
 			name:		'debug',
 			args:		['--debug', '-d'],
 			desc:		'Compile in debug mode.',
-			maxParams:	0,
+			maxParams:	0
 		},
 		{
 			name:		'warnings',
 			args:		['--warnings', '-w'],
 			desc:		'Display warnings.',
-			maxParams:	0,
+			maxParams:	0
+		},
+		{
+			name:		'pretty',
+			args:		['--pretty', '-p'],
+			desc:		'Pretty print compiled code.',
+			maxParams:	0
 		},
 		{
 			name:		'encoding',
 			args:		['--encoding', '-e'],
 			desc:		'The encoding to use for reading the files.',
 			maxParams:	1,
-			minParams:	1,
+			minParams:	1
 		},
 		{
 			name:		'output',
 			args:		['--output', '-o'],
 			desc:		'The output target. Default=-',
 			maxParams:	1,
-			minParams:	1,
+			minParams:	1
 		}
 	],
 });
@@ -92,15 +98,15 @@ function ready () {
 
 	var t = Date.now();
 
-	var filename = args["output"] || '-';
+	var filename = args.output || '-';
 
 	//Wrap the compilation code in a try/catch so we can manually output
 	//compile errors
 	try {
 		var c = new compiler(jsparse(code), {
-			debug:		args["debug"],
-			nowrap:		args["scope"],
-			warnings:	args["warnings"]
+			debug:		args.debug,
+			nowrap:		args.scope,
+			warnings:	args.warnings
 		});
 
 		c.preprocess();
@@ -112,12 +118,6 @@ function ready () {
 			format.BOLD + filename.replace(/\/\//, "/") + format.RESET +
 			': Compiled in ' + (Date.now() - t) + 'ms.'
 		);
-
-		if (filename === '-') {
-			console.log(output);
-		} else {
-			fs.writeFileSync(filename, output, args["encoding"] || 'UTF-8');
-		}
 	}
 	//Catch compile errors and manually output, highlight, etc.
 	catch(e){
@@ -181,6 +181,16 @@ function ready () {
 
 		console.log(errorCode.join("\n"));
 	}
+
+	if (filename === '-') {
+		console.log(output);
+	} else {
+		fs.writeFileSync(
+			filename,
+			args.pretty ? jspp.js_beautify(output) : output,
+			args.encoding || 'UTF-8'
+		);
+	}
 }
 
 var files = inputFiles.map(function(f){
@@ -192,7 +202,7 @@ var files = inputFiles.map(function(f){
 		});
 		process.stdin.on('end', ready);
 	} else {
-		fs.readFile(f, args["encoding"] || 'UTF-8', function(e, data) {
+		fs.readFile(f, args.encoding || 'UTF-8', function(e, data) {
 			if (e) throw "Reading file '" + f + "' failed.";
 
 			r.r = String(data);

@@ -4,6 +4,7 @@ Alpha 0.014.1
 * CLI Compiler updates and fixes
 * JavaScript++ command-line REPL
 * Bug fixes for switch statements
+* Pretty printing of compiled code
 
 8/7/12 - Alpha 0.014
 -----------
