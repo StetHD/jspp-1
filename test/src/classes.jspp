@@ -141,6 +141,21 @@ test("Static and Instance Members", function() {
 		, true
 		, "Static methods"
 	);
+	equal(
+		(function() {
+			class foo {
+				static class bar {
+					public function baz() {
+						return true;
+					}
+				}
+			}
+			return (new foo.bar()).baz();
+		})()
+
+		, true
+		, "Static classes"
+	);
 
 	ok(
 		function() {
@@ -181,6 +196,26 @@ test("Static and Instance Members", function() {
 	equal(
 		(function() {
 			class foo {
+				public class bar {
+					public function baz() {
+						return true;
+					}
+				}
+
+				public function qux() {
+					return (new bar()).baz();
+				}
+			}
+
+			return (new foo).qux();
+		})()
+
+		, true
+		, "Instance classes"
+	);
+	equal(
+		(function() {
+			class foo {
 				public var bar = true;
 			}
 
@@ -204,6 +239,22 @@ test("Static and Instance Members", function() {
 		, TypeError
 		, "Instance methods cannot be accessed without instance"
 	);
+	raises(
+		function() {
+			class foo {
+				public class bar {
+					public function baz() {
+						return true;
+					}
+				}
+			}
+
+			return new foo.bar;
+		}
+
+		, TypeError
+		, "Instance classes cannot be accessed without instance"
+	);
 	equal(
 		(function() {
 			class foo {
@@ -215,6 +266,49 @@ test("Static and Instance Members", function() {
 
 		, true
 		, "Instance pure method equality"
+	);
+
+	equal(
+		(function() {
+			class foo {
+				private static var bar = 1;
+				public static var baz = 2;
+				protected static var qux = 3;
+			}
+
+			return foo.baz;
+		})()
+
+		, 2
+		, "public static variable can be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static var bar = 1;
+				public static var baz = 2;
+				protected static var qux = 3;
+			}
+
+			return typeof foo.bar;
+		})()
+
+		, "undefined"
+		, "private static variable cannot be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static var bar = 1;
+				public static var baz = 2;
+				protected static var qux = 3;
+			}
+
+			return typeof foo.qux;
+		})()
+
+		, "undefined"
+		, "protected static variable cannot be accessed outside class"
 	);
 
 	equal(
@@ -232,7 +326,7 @@ test("Static and Instance Members", function() {
 		})()
 
 		, "function"
-		, "public static can be accessed outside class"
+		, "public static method can be accessed outside class"
 	);
 	equal(
 		(function() {
@@ -249,7 +343,7 @@ test("Static and Instance Members", function() {
 		})()
 
 		, "undefined"
-		, "private static cannot be accessed outside class"
+		, "private static method cannot be accessed outside class"
 	);
 	equal(
 		(function() {
@@ -266,7 +360,59 @@ test("Static and Instance Members", function() {
 		})()
 
 		, "undefined"
-		, "protected static cannot be accessed outside class"
+		, "protected static method cannot be accessed outside class"
+	);
+
+	notEqual(
+		(function() {
+			class foo {
+				private static class bar {
+				}
+				public static class baz {
+				}
+				protected static class qux {
+				}
+			}
+
+			return typeof foo.baz;
+		})()
+
+		, "undefined"
+		, "public static class can be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static class bar {
+				}
+				public static class baz {
+				}
+				protected static class qux {
+				}
+			}
+
+			return typeof foo.bar;
+		})()
+
+		, "undefined"
+		, "private static class cannot be accessed outside class"
+	);
+	equal(
+		(function() {
+			class foo {
+				private static class bar {
+				}
+				public static class baz {
+				}
+				protected static class qux {
+				}
+			}
+
+			return typeof foo.qux;
+		})()
+
+		, "undefined"
+		, "protected static class cannot be accessed outside class"
 	);
 });
 
@@ -428,6 +574,52 @@ test("Access Modifiers", function() {
 		, ReferenceError
 		, "Private method cannot be accessed by nested class"
 	);
+	equal(
+		(class {
+			private class bar {
+				public function baz() {
+					return true;
+				}
+			}
+
+			public function Constructor() {
+				return (new bar()).baz();
+			}
+		})()
+
+		, true
+		, "Private class can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				private class bar {
+				}
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Private class cannot be accessed outside class"
+	);
+	raises(
+		function() {
+			class foo {
+				private class bar {
+				}
+			}
+
+			return (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Private class cannot be accessed by subclass"
+	);
 
 	equal(
 		(function() {
@@ -561,6 +753,52 @@ test("Access Modifiers", function() {
 		, true
 		, "Public method can be accessed inside nested class"
 	);
+	equal(
+		(class {
+			public class bar {
+				public function baz() {
+					return true;
+				}
+			}
+
+			public function Constructor() {
+				return (new bar()).baz();
+			}
+		})()
+
+		, true
+		, "Public class can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				public class bar {
+				}
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Public class cannot be accessed outside class"
+	);
+	raises(
+		function() {
+			class foo {
+				public class bar {
+				}
+			}
+
+			return (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Public class cannot be accessed by subclass"
+	);
 
 	equal(
 		(function() {
@@ -690,6 +928,52 @@ test("Access Modifiers", function() {
 
 		, true
 		, "Protected method can be accessed inside nested class"
+	);
+	equal(
+		(class {
+			protected class bar {
+				public function baz() {
+					return true;
+				}
+			}
+
+			public function Constructor() {
+				return (new bar()).baz();
+			}
+		})()
+
+		, true
+		, "Protected class can be accessed inside class"
+	);
+	raises(
+		function() {
+			class foo {
+				protected class bar {
+				}
+			}
+
+			return bar;
+		}
+
+		, ReferenceError
+		, "Protected class cannot be accessed outside class"
+	);
+	raises(
+		function() {
+			class foo {
+				protected class bar {
+				}
+			}
+
+			return (class baz extends foo {
+				public function Constructor() {
+					return bar;
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Protected class cannot be accessed by subclass"
 	);
 
 	equal(

@@ -5,6 +5,7 @@ Alpha 0.014.1
 * JavaScript++ command-line REPL
 * Bug fixes for switch statements
 * Pretty printing of compiled code
+* Nested class declarations now work with access modifiers
 
 8/7/12 - Alpha 0.014
 -----------

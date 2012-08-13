@@ -653,9 +653,15 @@ compiler.prototype.compile = function (ast) {
 				methods = {},
 				currentItem,
 				duplicates = [],
-				privateMembers = []; //Check for re-declarations of vars/functions
+				privateMembers = [], //Check for re-declarations of vars/functions
+				hasAccessModifier;
 
 			this.NewClass(ast);
+
+			hasAccessModifier = ast.public ||
+								ast.private ||
+								ast.static ||
+								ast.protected;
 
 			//If this is a subclass, get the superclass data
 			if (ast.extends) {
@@ -888,18 +894,40 @@ compiler.prototype.compile = function (ast) {
 			staticConstructor = staticConstructor.pop();
 			destructor = destructor.pop();
 
+			//Nested class declarations
+			if (ast.nestedParent && ast.classForm === 0) {
+				out.push("var " + ast.name + "=");
+
+				//static classes
+				if (ast.static) {
+					out.push(ast.nestedParent.name + "." + ast.name + "=");
+				}
+				//public classes
+				else if (ast.public) {
+					out.push("this." + ast.name + "=");
+				}
+				//protected classes
+				else if (ast.protected) {
+					out.push("this.__PROTECTED__." + ast.name + "=");
+				}
+				//private classes - ignored
+				//var statement at the top of this block already handles this
+			}
+
 			//Wrap in a function so we can call via: new foo(x,y,z)
 			out.push("function " + (ast.name || "") + "(){");
 			out.push("var __SUPER__" +
 					 (superClassId !== void 0 ? ",__CLASS" + superClassId + "__" : "") +
 					 ";");
 
-			if (ast.nestedParent) {
-				//Static class expressions
-				if (ast.classForm && ast.static) {
+			//Handle nested classes
+			if (ast.nestedParent && hasAccessModifier) {
+				//Static nested classes
+				if (ast.static) {
 					/*out.push("var __CLASS" + ast.nestedParent.body.scopeId +
 								"__=__CLASSES__[" + ast.nestedParent.body.scopeId + "];");*/
 				}
+				//All other nested classes
 				else {
 					//Cleanup
 					for (var i=0, len=ast.nestedParent.privateMembers.length;
@@ -1244,8 +1272,9 @@ compiler.prototype.compile = function (ast) {
 			//Call the constructor
 			out.push(".Constructor.apply(this,[].slice.call(arguments))}");
 
-			//Add semicolon for nested class expressions
-			if (ast.public || ast.private || ast.static || ast.protected) {
+			//Add semicolon for nested class expressions and nested class
+			//declarations
+			if (hasAccessModifier || ast.nestedParent) {
 				out.push(";");
 			}
 
