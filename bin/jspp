@@ -195,8 +195,12 @@ function ready () {
 
 		//Compiled OK! Output status
 		else {
+			var formattedFilename = format.BOLD +
+									filename.replace(/\/\//, "/") +
+									format.RESET;
+
 			finalStatus = '[   ' + format.GREEN + 'OK' + format.RESET + '   ]  ';
-			finalStatus += format.BOLD + filename.replace(/\/\//, "/") + format.RESET;
+			finalStatus += formattedFilename;
 			finalStatus += ': Compiled in ' + (Date.now() - t) + 'ms';
 
 			//If --warn enabled, output warnings
@@ -212,12 +216,14 @@ function ready () {
 				if (verify(output)) {
 					console.log(
 						'[   ' + format.GREEN + 'OK' + format.RESET + '   ]  ' +
+						formattedFilename + ": " +
 						'Verification of compiled code complete.'
 					);
 				}
 				else {
 					console.log(
 						"[" + format.RED + "  FATAL  " + format.RESET + "] " +
+						formattedFilename + ": " +
 						"Verification of compiled code failed."
 					);
 				}
@@ -241,7 +247,8 @@ function ready () {
 		e.message = e.message.replace(/\s*,*\s*$/, "");
 
 		visualize(
-			format.BOLD + "ParseError" + format.RESET + ": " + (e.message || ""),
+			format.BOLD + inputFiles + format.RESET + ": ParseError: " +
+				(e.message || ""),
 
 			"[  ERROR  ] ",
 			code,
@@ -297,9 +304,17 @@ function visualize(message, errorType, code, lineno, errorStart, errorEnd, fgCol
 		errorCodeEnd   = errorCode.slice(errorEnd, errorCode.length),
 		indent = Array(errorType.length + 1).join(" ");
 
-	errorCode = errorCodeBegin +
-				fgColor + errorCodeHighlight + format.RESET +
-				errorCodeEnd;
+	errorCode = errorCodeBegin;
+	//If the error character(s) are whitespace, we need to highlight it using
+	//background rather than foreground color
+	if (/^\s+$/.test(errorCodeHighlight)) {
+		errorCode += bgColor + errorCodeHighlight + format.RESET;
+	}
+	//Otherwise, color just the foreground
+	else {
+		errorCode += fgColor + errorCodeHighlight + format.RESET;
+	}
+	errorCode += errorCodeEnd;
 
 	errorCode = errorCode.split(/[\r\n]/gm);
 
@@ -347,7 +362,7 @@ function visualize(message, errorType, code, lineno, errorStart, errorEnd, fgCol
 			indent + format.BOLD + "Source Code" + format.RESET + ": \n"
 		);
 
-		console.log(errorCode.join("\n"));
+		console.log(errorCode.join("\n").replace(/\t/gm, "    "));
 	}
 }
 
