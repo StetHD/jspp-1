@@ -3,7 +3,7 @@
 var	fs		= require('fs'),
 	paramon		= require('paramon'),
 	jspp		= require('javascript-plusplus'),
-	compiler	= global.compiler;
+	Compiler	= global.compiler;
 
 //Generate AST
 function jsparse () {
@@ -12,11 +12,13 @@ function jsparse () {
 
 //CLI colors
 var format = {
-	BOLD : '\u001b[0;1m',
-	GREEN: '\u001b[0;32m',
-	RED  : '\u001b[0;31m',
-	REDBG: '\u001b[0;41m',
-	RESET: '\u001b[0m'
+	BOLD     : '\u001b[0;1m',
+	GREEN    : '\u001b[0;32m',
+	RED      : '\u001b[0;31m',
+	YELLOW   : '\u001b[0;33m',
+	REDBG    : '\u001b[0;41m',
+	YELLOWBG : '\u001b[0;43m',
+	RESET    : '\u001b[0m'
 };
 
 //Process arguments
@@ -25,9 +27,15 @@ var args = paramon.readFormat(process.argv, {
 	usage:	"js++ file(s) [options]",
 	params:	[
 		{
+			name:		'check',
+			args:		['--check', '-c'],
+			desc:		'Verifies the compiled code to ensure it\'s valid JavaScript.',
+			maxParams:	0
+		},
+		{
 			name:		'scope',
 			args:		['--scope', '-s'],
-			desc:		'Creates a scope.',
+			desc:		'Creates a scope to prevent compiled code from polluting global namespace.',
 			maxParams:	0
 		},
 		{
@@ -38,14 +46,20 @@ var args = paramon.readFormat(process.argv, {
 		},
 		{
 			name:		'warnings',
-			args:		['--warnings', '-w'],
-			desc:		'Display warnings.',
+			args:		['--warn', '-w'],
+			desc:		'Display compiler warnings.',
 			maxParams:	0
 		},
 		{
 			name:		'pretty',
 			args:		['--pretty', '-p'],
 			desc:		'Pretty print compiled code.',
+			maxParams:	0
+		},
+		{
+			name:		'visualize',
+			args:		['--visualize', '-v'],
+			desc:		'Visualize errors and warnings.',
 			maxParams:	0
 		},
 		{
@@ -62,13 +76,12 @@ var args = paramon.readFormat(process.argv, {
 			maxParams:	1,
 			minParams:	1
 		}
-	],
+	]
 });
 var inputFiles = args['$!stray'];
 
 //Debugging
 args.debug || process.on('uncaughtException', function (e) {
-	//Display the error message
 	console.log('[' + format.RED + 'ERROR' + format.RESET + '] ' + (e.message || ""));
 
 	process.exit(1);
@@ -94,32 +107,124 @@ function ready () {
 
 	/* All files ready, let's get going */
 
-	var code = files.join('\n;');
-
-	var t = Date.now();
-
-	var filename = args.output || '-';
+	var code = files.join('\n;'),
+		t = Date.now();
+		filename = args.output || '-',
+		parseError = false,
+		compiler;
 
 	//Wrap the compilation code in a try/catch so we can manually output
-	//compile errors
+	//compile errors and catch parse-time errors
 	try {
-		var c = new compiler(jsparse(code), {
+		compiler = new Compiler(jsparse(code), {
 			debug:		args.debug,
 			nowrap:		args.scope,
 			warnings:	args.warnings
 		});
 
-		c.preprocess();
+		compiler.preprocess();
 
-		var output = c.compile();
+		var output = compiler.compile();
 
-		console.log(
-			'[' + format.GREEN + 'OK' + format.RESET + '   ] ' +
-			format.BOLD + filename.replace(/\/\//, "/") + format.RESET +
-			': Compiled in ' + (Date.now() - t) + 'ms.'
-		);
+		//Print warnings
+		var i = 0,
+			len = compiler.warnings.length,
+			error,
+			warning;
+		for (; i < len; i++) {
+			warning = compiler.warnings[i];
+
+			visualize(
+				format.BOLD + warning.type.name + format.RESET + ": " +
+					(warning.toString() || ""),
+
+				"[  WARN  ]  ",
+				code,
+				warning.line - 1,
+				warning.chara.start,
+				warning.chara.end,
+				format.YELLOW,
+				format.YELLOWBG
+			);
+		}
+
+		//Print errors
+		i = 0;
+		len = compiler.errors.length;
+		for (; i < len; i++) {
+			error = compiler.errors[i];
+
+			visualize(
+				format.BOLD + error.type.name + format.RESET + ": " +
+					(error.message || ""),
+
+				"[  ERROR  ] ",
+				code,
+				error.line - 1,
+				error.chara.start,
+				error.chara.end,
+				format.RED,
+				format.REDBG
+			);
+		}
+
+		var finalStatus = "";
+
+		//Compiled with errors - output status
+		if (compiler.errors && compiler.errors.length) {
+			finalStatus = '[  ' + format.RED + 'FATAL' + format.RESET + '  ] ';
+			finalStatus += format.BOLD + filename.replace(/\/\//, "/") + format.RESET;
+			finalStatus += ': Compiled in ' + (Date.now() - t) + 'ms with ';
+
+			//If --warn enabled, output warnings
+			if (args.warnings) {
+				finalStatus += compiler.warnings.length + ' warnings and ';
+			}
+
+			//If we've got errors, output errors
+			if (compiler.errors) {
+				finalStatus += compiler.errors.length.toString() || "0";
+			}
+			else {
+				finalStatus += "0";
+			}
+			finalStatus += " errors."
+
+			console.log(finalStatus);
+		}
+
+		//Compiled OK! Output status
+		else {
+			finalStatus = '[   ' + format.GREEN + 'OK' + format.RESET + '   ]  ';
+			finalStatus += format.BOLD + filename.replace(/\/\//, "/") + format.RESET;
+			finalStatus += ': Compiled in ' + (Date.now() - t) + 'ms';
+
+			//If --warn enabled, output warnings
+			if (args.warnings) {
+				finalStatus += ' with ' + compiler.warnings.length + ' warnings';
+				finalStatus += ' and 0 errors';
+			}
+
+			console.log(finalStatus);
+
+			//Verify the compiled code for valid JS?
+			if (args.check) {
+				if (verify(output)) {
+					console.log(
+						'[   ' + format.GREEN + 'OK' + format.RESET + '   ]  ' +
+						'Verification of compiled code complete.'
+					);
+				}
+				else {
+					console.log(
+						"[" + format.RED + "  FATAL  " + format.RESET + "] " +
+						"Verification of compiled code failed."
+					);
+				}
+			}
+		}
 	}
-	//Catch compile errors and manually output, highlight, etc.
+	//Catch parse errors and manually output, highlight, etc.
 	catch(e){
 		//Get error line number
 		var lineno = /lineno:\s*(\d+)/i.exec(e.message);
@@ -132,67 +237,121 @@ function ready () {
 
 		//Format the error message
 		e.message = e.message.replace(/\s*filename:\s*,?/i, "");
-		e.message = e.message.replace(/lineno:\s*/i, format.BOLD + "line " + format.RESET);
+		e.message = e.message.replace(/\s*lineno:\s*\d*\s*,?/i, "");
+		e.message = e.message.replace(/\s*,*\s*$/, "");
 
-		//Highlight the specific error character
-		var errorCode = e.source,
-			errorCodeBegin = errorCode.slice(0, e.cursor),
-			errorCodeHighlight = errorCode.slice(e.cursor, e.cursor + 1);
-			errorCodeEnd   = errorCode.slice(e.cursor + 1, errorCode.length);
+		visualize(
+			format.BOLD + "ParseError" + format.RESET + ": " + (e.message || ""),
 
-		errorCode = errorCodeBegin +
-					format.RED + errorCodeHighlight + format.RESET +
-					errorCodeEnd;
-
-		errorCode = errorCode.split(/[\r\n]/gm);
-
-		//Get error character relative to error line
-		var errorLineChar = Math.max(
-			e.cursor - errorCode.slice(0, lineno).join("\n").length,
-			-1
+			"[  ERROR  ] ",
+			code,
+			lineno,
+			e.cursor,
+			e.cursor + 1,
+			format.RED,
+			format.REDBG
 		);
 
-		//Format error code
-		errorCode = errorCode.map(function(lineCode, index) {
-			var indent = "        ";
-
-			//Highlight the indent for error lines
-			if (index == lineno) {
-				indent = format.REDBG + "        " + format.RESET;
-			}
-
-			return indent + (index + 1) + ". " + lineCode;
-		});
-
-		//Get only the nearest lines for an error rather than outputting entire
-		//source code
-		var beginLine = Math.max(0, lineno - 5),
-			endLine = Math.min(lineno + 5, errorCode.length);
-		errorCode = errorCode.slice(beginLine, endLine);
-
-		//Display the error message
-		console.log(
-			'[' + format.RED + 'ERROR' + format.RESET + '] ' +
-			(e.message || "") +
-			format.BOLD + " char " + format.RESET + errorLineChar + "\n"
-		);
-		console.log("        " + format.BOLD + "Filename" + format.RESET + ": " + inputFiles);
-		console.log("        " + format.BOLD + "Source Code" + format.RESET + ": \n");
-
-		console.log(errorCode.join("\n"));
+		parseError = true;
 	}
 
-	if (filename === '-') {
-		console.log(output);
-	} else {
-		fs.writeFileSync(
-			filename,
-			args.pretty ? jspp.js_beautify(output) : output,
-			args.encoding || 'UTF-8'
+	//If everything compiled successfully, write to output
+	if (output != null && !parseError) {
+		if (filename === '-') {
+			console.log(output);
+		} else {
+			fs.writeFileSync(
+				filename,
+				args.pretty ? jspp.js_beautify(output) : output,
+				args.encoding || 'UTF-8'
+			);
+		}
+	}
+	//Otherwise, notify of parse errors
+	else {
+		console.log(
+			"[" + format.RED + "  FATAL  " + format.RESET +
+			"] Compilation failed with a syntax error at parse time."
 		);
 	}
 }
 
+//Validate the compiled code to test for valid JavaScript
+function verify(code){
+	var validatedCode;
+
+	try{
+		validatedCode = Function(code);
+	}
+	finally{
+		return !!validatedCode;
+	}
+}
+
+//Visualize errors and warnings
+function visualize(message, errorType, code, lineno, errorStart, errorEnd, fgColor, bgColor) {
+	//Highlight the specific error character
+	var errorCode = code,
+		errorCodeBegin = errorCode.slice(0, errorStart),
+		errorCodeHighlight = errorCode.slice(errorStart, errorEnd),
+		errorCodeEnd   = errorCode.slice(errorEnd, errorCode.length),
+		indent = Array(errorType.length + 1).join(" ");
+
+	errorCode = errorCodeBegin +
+				fgColor + errorCodeHighlight + format.RESET +
+				errorCodeEnd;
+
+	errorCode = errorCode.split(/[\r\n]/gm);
+
+	//Get error character relative to error line
+	var errorLineChar = Math.max(
+		errorStart - errorCode.slice(0, lineno).join("\n").length,
+		-1
+	);
+
+	//Format error code
+	errorCode = errorCode.map(function(lineCode, index) {
+		var lineIndent = indent;
+
+		//Highlight the indent for error lines
+		if (index == lineno) {
+			lineIndent = bgColor + indent + format.RESET;
+		}
+
+		return lineIndent + (index + 1) + ". " + lineCode;
+	});
+
+	//Get only the nearest lines for an error rather than outputting entire
+	//source code
+	var beginLine = Math.max(0, lineno - 5),
+		endLine = Math.min(lineno + 5, errorCode.length);
+	errorCode = errorCode.slice(beginLine, endLine);
+
+	//Display the error message
+	console.log(
+		errorType.replace(/\[([^\]]+)]/, function(s, errorTypeExtracted) {
+			return "[" + fgColor + errorTypeExtracted + format.RESET + "]";
+		}) +
+		(message || "") + ", " +
+		format.BOLD + "line " + format.RESET + (lineno + 1) +
+		format.BOLD + " char " + format.RESET + errorLineChar
+	);
+
+	//Print out visualization of error
+	if (args.visualize) {
+		console.log(
+			"\n" +
+			indent + format.BOLD + "Filename" + format.RESET + ": " + inputFiles
+		);
+		console.log(
+			indent + format.BOLD + "Source Code" + format.RESET + ": \n"
+		);
+
+		console.log(errorCode.join("\n"));
+	}
+}
+
+//Concatenate files
 var files = inputFiles.map(function(f){
 	var r = new Dummy;
 	if (f === '-') {

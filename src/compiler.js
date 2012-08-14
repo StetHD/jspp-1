@@ -43,9 +43,16 @@ function compiler(ast, options) {
 			e.line = node.lineno;
 		}
 		e.category = "Warning";
+		e.chara = {
+			start: node.start,
+			end: node.end
+		};
 		e.toString = function(){ return this.message.toString() };
 
-		typeof console != "undefined" && console.log(e);
+		//If we're in the DOM, log this warning to the console
+		if (typeof window == "object" && typeof console != "undefined") {
+			console.log(e);
+		}
 
 		this.warnings.push(e);
 	};
@@ -54,13 +61,20 @@ function compiler(ast, options) {
 			e.line = node.lineno;
 		}
 		e.category = "Error";
+		e.chara = {
+			start: node.start,
+			end: node.end
+		};
 		e.toString = function(){ return this.message.toString() };
-
-		typeof console != "undefined" && console.log(e);
 
 		this.errors.push(e);
 
-		throw e;
+		//If we're in the DOM, log this error to the console
+		if (typeof window == "object" && typeof console != "undefined") {
+			console.log(e);
+
+			throw e;
+		}
 	};
 
 	this.lineno = -1; //Keep track of line numbers to compile debuggable code
