@@ -13,22 +13,38 @@
 BUILD_DIR='build/'
 SOURCE_DIR='src/'
 
+COMPILE_OPTIONS='--check --visualize --debug'
+
 ################################################################################
 
 ROOT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 
-cd $ROOT_DIR
+cd "$ROOT_DIR"
 echo 'Cleaning build directory'
-rm -rf $BUILD_DIR
-mkdir $BUILD_DIR
+rm -rf "$BUILD_DIR"
+mkdir "$BUILD_DIR"
 
 echo 'Compiling JavaScript++ files'
-JSPP_FILES=$(find . -name "*.jspp" -type f)
+JSPP_FILES=$(find "./$SOURCE_DIR")
 for FILE in $JSPP_FILES
 do
 	OUTPUT=$(echo "$FILE" | sed "s@$SOURCE_DIR@$BUILD_DIR@" | sed 's@\.jspp$@.js@')
-	mkdir -p $(echo $OUTPUT | sed 's@/[^/]*\.jsp*$@@')
-	js++ "$FILE" -o $OUTPUT
+	
+	#Handle directories by re-creating them
+	if [ -d "$FILE" ]; then
+		mkdir -p "$OUTPUT"
+		echo "Creating directory: $OUTPUT"
+
+	#Handle JS++ files
+	elif [ `echo "${FILE##*.}" | tr [:upper:] [:lower:]` = "jspp" ]; then
+		mkdir -p $(echo "$OUTPUT" | sed 's@/[^/]*\.jsp*$@@')
+		js++ $COMPILE_OPTIONS "$FILE" -o "$OUTPUT"
+
+	#Copy all other types of files over
+	elif [ -f "$FILE" ]; then
+		cp -f "$FILE" "$OUTPUT"
+		echo "Copying: \"$FILE\" to \"$OUTPUT\""
+	fi
 done
 
 echo 'Build complete'
