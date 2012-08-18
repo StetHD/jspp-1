@@ -1299,6 +1299,52 @@ compiler.prototype.compile = function (ast) {
 
 			break;
 
+		//Namespaces
+		case jsdef.NAMESPACE:
+			if (ast.name) {
+				out.push("var " + ast.name + "=global.jsppCommon.mixin(" + ast.name + "||{},");
+			}
+
+			out.push("(function() {");
+			out.push("var global=this;");
+			ast.body.isNamespace = true;
+			out.push(generate(ast.body));
+			out.push("}).call()");
+
+			if (ast.name) {
+				out.push(")");
+			}
+
+			out.push(";");
+
+			break;
+
+		//Import/export
+		case jsdef.IMPORT:
+			break;
+		case jsdef.EXPORT:
+			//If we're in the global scope, export it as a module
+			if (this.isGlobalScope()) {
+				out.push("module.exports=" + generate(ast.value) + ";");
+			}
+			//Otherwise, if we're in a namespace, use a return statement
+			else {
+				currentScope = this.CurrentScope();
+				if (currentScope &&
+					(currentScope.type == jsdef.NAMESPACE ||
+					 currentScope.isNamespace)) {
+					out.push("return " + generate(ast.value) + ";");
+				}
+				else {
+					this.NewError({
+						type: SyntaxError,
+						message: "export must be directly inside a namespace (can include global namespace)"
+					}, ast);
+				}
+			}
+
+			break;
+
 		//Groups
 		case jsdef.GROUP:
 			out.push("(");

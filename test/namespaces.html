@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<link media="screen" type="text/css" rel="stylesheet" href="lib/qunit.css">
+	<title>JS++ Unit Tests: Namespaces</title>
+</head>
+<body>
+
+<h1 id="qunit-header">JavaScript++ Namespaces</h1>
+<h2 id="qunit-banner"></h2>
+<div id="qunit-testrunner-toolbar"></div>
+<h2 id="qunit-userAgent"></h2>
+<ol id="qunit-tests"></ol>
+
+<script type="text/javascript" src="../src/jsdefs.js"></script>
+<script type="text/javascript" src="../src/jsparse.js"></script>
+<script type="text/javascript" src="../src/compiler.js"></script>
+<script type="text/javascript" src="../src/dist-common.js"></script>
+
+<script type="text/javascript" src="lib/jquery-1.7.1.js"></script>
+<script type="text/javascript" src="lib/qunit.js"></script>
+<script type="text/javascript">
+$.ajax('src/namespaces.jspp', {
+	dataType: "text",
+	success: function(source) {
+		var c = new compiler(window.narcissus.jsparse((source)));
+		c.preprocess();
+		eval(c.compile());
+	}
+});
+</script>
+</body>
+</html>

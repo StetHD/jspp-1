@@ -1,0 +1,627 @@
+/******************************BASIC REQUIREMENTS******************************/
+test("Basic Requirements", function() {
+	ok(
+		function() {
+			namespace {
+			}
+		}
+
+		, "Anonymous Namespace Statement"
+	);
+
+	ok(
+		function() {
+			namespace Foo {
+			}
+		}
+
+		, "Named Namespace Statement"
+	);
+
+	ok(
+		function() {
+			namespace {
+				namespace {
+				}
+			}
+		}
+
+		, "Anonymous namespace nested inside an anonymous namespace"
+	);
+
+	ok(
+		function() {
+			namespace Foo {
+				namespace Bar {
+				}
+			}
+		}
+
+		, "Named namespace nested inside a named namespace"
+	);
+
+	ok(
+		function() {
+			namespace {
+				namespace Foo {
+				}
+			}
+		}
+
+		, "Named namespace nested inside an anonymous namespace"
+	);
+
+	ok(
+		function() {
+			namespace Foo {
+				namespace {
+				}
+			}
+		}
+
+		, "Anonymous namespace nested inside named namespace"
+	);
+
+	ok(
+		function() {
+			namespace {
+				export 1;
+			}
+		}
+
+		, "Exported inside anonymous namespace"
+	);
+
+	ok(
+		function() {
+			namespace {
+				export;
+			}
+		}
+
+		, "Exported inside anonymous namespace - export empty expression"
+	);
+
+	ok(
+		function() {
+			namespace Foo {
+				export 1;
+			}
+		}
+
+		, "Exported inside named namespace"
+	);
+
+	ok(
+		function() {
+			namespace Foo {
+				export;
+			}
+		}
+
+		, "Exported inside named namespace - export empty expression"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export 1 + 1;
+			}
+
+			return Foo;
+		})()
+
+		, 2
+		, "Exporting an expression"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export;
+			}
+
+			return Foo;
+		})()
+
+		, void 0
+		, "Exporting an empty expression exports undefined"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				this.bar = 1;
+
+				export this;
+			}
+
+			return Foo.bar;
+		})()
+
+		, 1
+		, "'this' keyword resolves to namespace object"
+	);
+});
+
+/********************************** EXPORTS ***********************************/
+test("Namespace Exports", function() {
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {
+					bar: [1, 2, 3]
+				};
+			}
+
+			return Foo.bar;
+		})()
+
+		, [1, 2, 3]
+		, "Export - array"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export {
+					bar: true
+				};
+			}
+
+			return Foo.bar;
+		})()
+
+		, true
+		, "Export - boolean"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export {
+					bar: function() { return true }
+				};
+			}
+
+			return Foo.bar();
+		})()
+
+		, true
+		, "Export - function"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export {
+					bar: 1
+				};
+			}
+
+			return Foo.bar;
+		})()
+
+		, 1
+		, "Export - number"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {
+					bar: {
+						foo: "bar"
+					}
+				};
+			}
+
+			return Foo.bar;
+		})()
+
+		, {foo: "bar"}
+		, "Export - object"
+	);
+
+	{
+		let barRe = /bar/;
+		equal(
+			(function() {
+				namespace Foo {
+					export {
+						bar: barRe
+					};
+				}
+
+				return Foo.bar;
+			})()
+
+			, barRe
+			, "Export - regexp"
+		);
+	}
+
+	equal(
+		(function() {
+			namespace Foo {
+				export {
+					bar: "bar"
+				};
+			}
+
+			return Foo.bar;
+		})()
+
+		, "bar"
+		, "Export - string"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				namespace Bar {
+					export {
+						baz: [1, 2, 3]
+					};
+				}
+
+				export {
+					Bar: Bar
+				};
+			}
+
+			return Foo.Bar.baz;
+		})()
+
+		, [1, 2, 3]
+		, "Export - Nested Class - array"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				namespace Bar {
+					export {
+						baz: true
+					};
+				}
+
+				export {
+					Bar: Bar
+				};
+			}
+
+			return Foo.Bar.baz;
+		})()
+
+		, true
+		, "Export - Nested Class - boolean"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				namespace Bar {
+					export {
+						baz: function() { return true }
+					};
+				}
+
+				export {
+					Bar: Bar
+				};
+			}
+
+			return Foo.Bar.baz();
+		})()
+
+		, true
+		, "Export - Nested Class - function"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				namespace Bar {
+					export {
+						baz: 1
+					};
+				}
+
+				export {
+					Bar: Bar
+				};
+			}
+
+			return Foo.Bar.baz;
+		})()
+
+		, 1
+		, "Export - Nested Class - number"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				namespace Bar {
+					export {
+						baz: {
+							foo: "bar"
+						}
+					};
+				}
+
+				export {
+					Bar: Bar
+				};
+			}
+
+			return Foo.Bar.baz;
+		})()
+
+		, {foo: "bar"}
+		, "Export - Nested Class - object"
+	);
+
+	{
+		let barRe = /bar/;
+		equal(
+			(function() {
+				namespace Foo {
+					namespace Bar {
+						export {
+							baz: barRe
+						};
+					}
+
+					export {
+						Bar: Bar
+					};
+				}
+
+				return Foo.Bar.baz;
+			})()
+
+			, barRe
+			, "Export - Nested Class - regexp"
+		);
+	}
+
+	equal(
+		(function() {
+			namespace Foo {
+				namespace Bar {
+					export {
+						baz: "bar"
+					};
+				}
+
+				export {
+					Bar: Bar
+				};
+			}
+
+			return Foo.Bar.baz;
+		})()
+
+		, "bar"
+		, "Export - Nested Class - string"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {};
+			}
+
+			return Foo;
+		})()
+
+		, {}
+		, "Export - Object (no properties)"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {foo: "bar", bar: "baz"};
+			}
+
+			return Foo;
+		})()
+
+		, {foo: "bar", bar: "baz"}
+		, "Export - Object (with properties, 1 level deep)"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {
+					foo: "bar",
+					bar: {
+						baz: "qux"
+					}
+				};
+			}
+
+			return Foo;
+		})()
+
+		, {
+			foo: "bar",
+			bar: {
+				baz: "qux"
+			}
+		}
+		, "Export - Object (with properties, 2 levels deep)"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {
+					foo: "bar",
+					bar: {
+						baz: {
+							qux: "quux"
+						}
+					}
+				};
+			}
+
+			return Foo.bar.baz.qux;
+		})()
+
+		, "quux"
+		, "Export - Object (with properties, 3 levels deep)"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export {
+					bar: 1
+				};
+				export {
+					bar: 2
+				};
+			}
+
+			return Foo.bar;
+		})()
+
+		, 1
+		, "Multiple exports results in first export being used"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {
+					bar: 1
+				};
+			}
+
+			namespace Foo {
+				export {
+					baz: 2
+				};
+			}
+
+			return [Foo.bar, Foo.baz];
+		})()
+
+		, [1, 2]
+		, "Redeclaration of namespace expands previous exports"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				export {
+					bar: {
+						foo: "bar",
+						bar: "baz"
+					}
+				};
+			}
+
+			namespace Foo {
+				export {
+					bar: {
+						baz: "qux"
+					},
+					baz: 2
+				};
+			}
+
+			return Foo;
+		})()
+
+		, {
+			bar: {
+				baz:"qux"
+			},
+			baz: 2
+		}
+		, "Redeclaration of namespace expands previous exports but overwrites objects rather than extending them"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				function bar() {
+				}
+				bar.qux = 1;
+
+				export {
+					bar: bar
+				};
+			}
+
+			namespace Foo {
+				function bar() {
+				}
+
+				export {
+					bar: bar
+				};
+			}
+
+			return Foo.bar.qux;
+		})()
+
+		, void 0
+		, "Redeclaration of namespace expands previous exports but overwrites functions rather than extending them"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Foo {
+				class Bar {
+					public var baz = 1;
+				}
+
+				export {
+					bar: Bar
+				};
+			}
+
+			namespace Foo {
+				class Bar {
+				}
+
+				export {
+					bar: Bar
+				};
+			}
+
+			return (new Foo.bar()).baz;
+		})()
+
+		, void 0
+		, "Redeclaration of namespace expands previous exports but overwrites classes rather than extending them"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export {
+					foo: 1
+				};
+			}
+
+			namespace Foo {
+				export {
+					bar: Foo.foo
+				};
+			}
+
+			return Foo.bar;
+		})()
+
+		, 1
+		, "Redeclaration of namespace allows access to previously declared namespace's exported members"
+	);
+});

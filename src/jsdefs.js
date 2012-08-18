@@ -5,7 +5,7 @@
 //
 //  * Supported Environments:
 //    Google V8 Engine, Firefox 3.6, Safari 4, Google Chrome 4
-//  
+//
 //  * Not supported yet:
 //    Opera 10.10
 
@@ -63,7 +63,7 @@
     var tokens = jsdef.tokens = [
         // End of source.
         "END",
-        
+
         // Operators and punctuators.  Some pair-wise order matters, e.g. (+, -)
         // and (UNARY_PLUS, UNARY_MINUS).
         "\n", ";", "...",
@@ -87,23 +87,23 @@
         "{", "}",
         "(", ")",
         "**",
-        
+
         // Nonterminal tree node type codes.
         "SCRIPT", "BLOCK", "LABEL", "FOR_IN", "CALL", "NEW_WITH_ARGS", "INDEX",
         "ARRAY_INIT", "OBJECT_INIT", "PROPERTY_INIT", "GETTER", "SETTER",
         "GROUP", "LIST", "FOR_INSIDE", "ARRAY_COMP",
-        
+
         // Terminals.
         "IDENTIFIER", "NUMBER", "STRING", "REGEXP",
-        
+
         // Keywords.
         "break",
         "class", "case", "catch", "const", "continue",
         "debugger", "default", "delete", "do",
-        "else", "enum", "extends", "extension",
+        "else", "enum", "export", "extends", "extension",
         "false", "finally", "for", "function",
-        "if", "in", "inside", "instanceof", "is",
-        "new", "null",
+        "if", "import", "in", "inside", "instanceof", "is",
+        "namespace", "new", "null",
         "private", "protected", "public",
         "return",
         "static", "super", "switch",
@@ -171,11 +171,11 @@
 
 
     // Define const END, etc., based on the token names.  Also map name to index.
-    
+
     var keywords = jsdef.keywords = (function () {
 
         // Hash of keyword identifier to tokens index.  NB: we must null __proto__ to
-        // avoid toString, etc. namespace pollution. 
+        // avoid toString, etc. namespace pollution.
         //  var _keywords = {__proto__: null};
 
         // G. Lathoud's addition: This works however only on SpiderMonkey and the like,
@@ -183,12 +183,12 @@
         // (this helps on Rhino 1.6).
 
         var _keywords = {};
-        
+
         for (var i = 0, j = tokens.length; i < j; i++) {
 
 
             var a_const;
-            
+
             var t = tokens[i];
             if (/^[a-z]/.test(t)) {
                 a_const = t.toUpperCase();
@@ -196,9 +196,9 @@
             } else {
                 a_const = (/^\W/.test(t) ? opTypeNames[t] : t);
             }
-            
+
             jsdef[a_const] = i >> 0;
-            
+
             tokens[t] = i;
         }
 

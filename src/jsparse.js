@@ -413,6 +413,9 @@
                                           ? STATEMENT_FORM
                                           : DECLARED_FORM);
 
+			case jsdef.NAMESPACE:
+            	return NamespaceDefinition(t, x);
+
             case jsdef.LEFT_CURLY:
                 n = Statements(t, x);
                 t.mustMatch(jsdef.RIGHT_CURLY);
@@ -641,6 +644,18 @@
                 tt = t.peekOnSameLine();
                 if (tt != jsdef.END && tt != jsdef.NEWLINE && tt != jsdef.SEMICOLON && tt != jsdef.RIGHT_CURLY)
                     n.value = Expression(t, x);
+                break;
+
+			case jsdef.IMPORT:
+				break;
+
+			case jsdef.EXPORT:
+                n = new Node(t);
+                tt = t.peekOnSameLine();
+                if (tt != jsdef.END && tt != jsdef.NEWLINE && tt != jsdef.SEMICOLON && tt != jsdef.RIGHT_CURLY) {
+					n.value = Expression(t, x);
+				}
+
                 break;
 
             case jsdef.WITH:
@@ -986,6 +1001,20 @@
                 x.funDecls.push(f);
             return f;
         }
+
+		function NamespaceDefinition(t, x) {
+			var f = new Node(t);
+            if (t.match(jsdef.IDENTIFIER))
+                f.name = t.token().value;
+
+            t.mustMatch(jsdef.LEFT_CURLY);
+			var x2 = new CompilerContext(false);
+			f.body = Script(t, x2);
+			t.mustMatch(jsdef.RIGHT_CURLY);
+            f.end = t.token().end;
+
+            return f;
+		}
 
         function Variables(t, x) {
             var n = new Node(t);

@@ -1,3 +1,8 @@
+Alpha 0.015
+-----------
+* Namespaces
+* Export
+
 8/15/12 - Alpha 0.014.1
 -----------
 * CLI Compiler pretty prints errors, highlights relevant line number and character
