@@ -1485,7 +1485,12 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.RETURN:
 			this.TypeCheck(ast);
 			out.push("return ");
-			out.push(generate(ast.value));
+			if (this.options.debug) {
+				out.push("(" + generate(ast.value) + ")");
+			}
+			else {
+				out.push(generate(ast.value));
+			}
 			out.push(";");
 			break;
 		case jsdef.LIST:
