@@ -556,4 +556,86 @@ test("Namespace Exports", function() {
 		, 1
 		, "Redeclaration of namespace allows access to previously declared namespace's exported members"
 	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export bar;
+			}
+
+			return ("bar" in Foo) && (Foo.bar === void 0);
+		})()
+
+		, true
+		, "Exporting without assignment exports undefined but the property exists"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export foo, bar, baz;
+			}
+
+			return ("foo" in Foo) && ("bar" in Foo) && ("baz" in Foo) &&
+				   (Foo.foo === void 0) && (Foo.bar === void 0) && (Foo.baz === void 0);
+		})()
+
+		, true
+		, "Export - Comma separated - No assignments"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export foo = 1, bar = 2, baz = 3;
+			}
+
+			return Foo.foo === 1 && Foo.bar === 2 && Foo.baz === 3;
+		})()
+
+		, true
+		, "Export - Comma separated - All assignments"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export foo = 1, bar, baz;
+			}
+
+			return ("foo" in Foo) && ("bar" in Foo) && ("baz" in Foo) &&
+				   (Foo.foo === 1) && (Foo.bar === void 0) && (Foo.baz === void 0);
+		})()
+
+		, true
+		, "Export - Comma separated - First exported property has assignment only"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export foo, bar = 1, baz;
+			}
+
+			return ("foo" in Foo) && ("bar" in Foo) && ("baz" in Foo) &&
+				   (Foo.foo === void 0) && (Foo.bar === 1) && (Foo.baz === void 0);
+		})()
+
+		, true
+		, "Export - Comma separated - Middle exported property has assignment only"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export foo, bar, baz = 1;
+			}
+
+			return ("foo" in Foo) && ("bar" in Foo) && ("baz" in Foo) &&
+				   (Foo.foo === void 0) && (Foo.bar === void 0) && (Foo.baz === 1);
+		})()
+
+		, true
+		, "Export - Comma separated - Last exported property has assignment only"
+	);
 });

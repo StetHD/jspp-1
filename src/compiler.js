@@ -1486,6 +1486,7 @@ compiler.prototype.compile = function (ast) {
 			this.TypeCheck(ast);
 			out.push("return ");
 			if (this.options.debug) {
+				//Wrap in parantheses if debug mode is on to fix ASI bug
 				out.push("(" + generate(ast.value) + ")");
 			}
 			else {
