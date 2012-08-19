@@ -653,7 +653,20 @@
                 n = new Node(t);
                 tt = t.peekOnSameLine();
                 if (tt != jsdef.END && tt != jsdef.NEWLINE && tt != jsdef.SEMICOLON && tt != jsdef.RIGHT_CURLY) {
-					n.value = Expression(t, x);
+					if (t.peek() == jsdef.IDENTIFIER) {
+						do {
+							t.mustMatch(jsdef.IDENTIFIER);
+							var n2 = new Node(t);
+							n2.name = n2.value;
+							if (t.match(jsdef.ASSIGN)) {
+								if (t.token().assignOp)
+									throw t.newSyntaxError("Invalid export");
+								n2.initializer = Expression(t, x, jsdef.COMMA);
+							}
+
+							n.push(n2);
+						} while (t.match(jsdef.COMMA));
+					}
 				}
 
                 break;

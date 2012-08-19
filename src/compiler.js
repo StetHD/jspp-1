@@ -1306,10 +1306,10 @@ compiler.prototype.compile = function (ast) {
 			}
 
 			out.push("(function() {");
-			out.push("var global=this;");
+			out.push("var global=(function(){return this}).call(),__MODULE__=this;");
 			ast.body.isNamespace = true;
 			out.push(generate(ast.body));
-			out.push("}).call()");
+			out.push("return __MODULE__}).call({})");
 
 			if (ast.name) {
 				out.push(")");
@@ -1323,23 +1323,20 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.IMPORT:
 			break;
 		case jsdef.EXPORT:
-			//If we're in the global scope, export it as a module
-			if (this.isGlobalScope()) {
-				out.push("module.exports=" + generate(ast.value) + ";");
-			}
-			//Otherwise, if we're in a namespace, use a return statement
-			else {
-				currentScope = this.CurrentScope();
-				if (currentScope &&
-					(currentScope.type == jsdef.NAMESPACE ||
-					 currentScope.isNamespace)) {
-					out.push("return " + generate(ast.value) + ";");
+			var exportItem;
+
+			for (var item in ast) {
+				if (!isFinite(item)) continue;
+
+				exportItem = ast[item];
+
+				out.push("__MODULE__." + exportItem.name + "=");
+
+				if (exportItem.initializer) {
+					out.push(generate(exportItem.initializer) + ";");
 				}
 				else {
-					this.NewError({
-						type: SyntaxError,
-						message: "export must be directly inside a namespace (can include global namespace)"
-					}, ast);
+					out.push("void 0;");
 				}
 			}
 

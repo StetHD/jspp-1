@@ -10,15 +10,15 @@
 	//accessor properties can't have values)
 	var exportsObj = {};
 
-	this.module = {
+	global.module = {
 		__LOADED__: [],
 		exports: exportsObj
 	};
-	this.exports = this.module.exports;
+	global.exports = global.module.exports;
 
 	//ES5-compatible browsers can have this hacked in in a more "natural" way
 	if (canDefineProperty) {
-		Object.defineProperty(this.module, "__LOADED__", {
+		Object.defineProperty(global.module, "__LOADED__", {
 			value: [],
 			writable: false,
 			enumerable: false,
@@ -38,8 +38,8 @@
 				return {};
 			}
 		};
-		Object.defineProperty(this.module, "exports", exportsSettings);
-		Object.defineProperty(this, "exports", exportsSettings);
+		Object.defineProperty(global.module, "exports", exportsSettings);
+		Object.defineProperty(global, "exports", exportsSettings);
 	}
 
 	//The loading function itself
