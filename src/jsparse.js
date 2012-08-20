@@ -658,7 +658,7 @@
 							t.mustMatch(jsdef.IDENTIFIER);
 							var n2 = new Node(t);
 							n2.name = n2.value;
-							if (t.match(jsdef.ASSIGN)) {
+							if (t.mustMatch(jsdef.ASSIGN)) {
 								if (t.token().assignOp)
 									throw t.newSyntaxError("Invalid export");
 								n2.initializer = Expression(t, x, jsdef.COMMA);
