@@ -127,7 +127,10 @@ test("Basic Requirements", function() {
 		, {}
 		, "Exporting an empty expression empty object"
 	);
+});
 
+/******************************* this Keyword *********************************/
+test("Namespace - this Keyword", function() {
 	equal(
 		(function() {
 			namespace Foo {
@@ -139,6 +142,23 @@ test("Basic Requirements", function() {
 
 		, 1
 		, "'this' keyword resolves to namespace object"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = 1;
+			}
+
+			namespace Foo {
+				export baz = this.bar;
+			}
+
+			return Foo.baz;
+		})()
+
+		, 1
+		, "'this' keyword resolves correctly for multiple namespaces with same name"
 	);
 });
 

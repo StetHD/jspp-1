@@ -1289,7 +1289,7 @@ compiler.prototype.compile = function (ast) {
 				out.push(";");
 			}
 
-			//Include static declarations
+			//Include static declarations if we're not inside a class expression
 			if (ast.classForm === 0) {
 				out.push(staticItems.join(""));
 			}
@@ -1300,15 +1300,24 @@ compiler.prototype.compile = function (ast) {
 
 		//Namespaces
 		case jsdef.NAMESPACE:
-			if (ast.name) {
-				out.push("var " + ast.name + "=global.jsppCommon.mixin(" + ast.name + "||{},");
+			var namespaceId = ast.name;
+
+			if (namespaceId) {
+				out.push("var " + namespaceId +
+						 "=global.jsppCommon.mixin(" + namespaceId + "||{},");
 			}
 
 			out.push("(function() {");
 			out.push("var global=(function(){return this}).call(),__MODULE__=this;");
 			ast.body.isNamespace = true;
 			out.push(generate(ast.body));
-			out.push("return __MODULE__}).call({})");
+
+			if (namespaceId) {
+				out.push("return __MODULE__}).call(" + ast.name + "||{})");
+			}
+			else {
+				out.push("return __MODULE__}).call({})");
+			}
 
 			if (ast.name) {
 				out.push(")");
