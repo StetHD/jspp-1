@@ -1290,7 +1290,9 @@ compiler.prototype.compile = function (ast) {
 			}
 
 			//Include static declarations
-			out.push(staticItems.join(""));
+			if (ast.classForm === 0) {
+				out.push(staticItems.join(""));
+			}
 
 			this.ExitClass();
 

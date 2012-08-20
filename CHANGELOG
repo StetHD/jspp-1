@@ -3,6 +3,7 @@ Alpha 0.015
 * Namespaces
 * Export
 * Fixed ASI bug with return statements and debug lines
+* Fixed class static member bugs for class expressions
 
 8/15/12 - Alpha 0.014.1
 -----------

@@ -414,6 +414,68 @@ test("Static and Instance Members", function() {
 		, "undefined"
 		, "protected static class cannot be accessed outside class"
 	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class bar {
+					static var baz = 1;
+				};
+			}
+
+			return Foo.bar.baz;
+		})()
+
+		, void 0
+		, "Static variables inside class expressions"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class bar {
+					static function baz() {
+						return 1;
+					}
+				};
+			}
+
+			return Foo.bar.baz;
+		})()
+
+		, void 0
+		, "Static functions inside class expressions"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class bar {
+					public static class baz {
+					}
+				};
+			}
+
+			return Foo.bar.baz;
+		})()
+
+		, void 0
+		, "Static class declarations inside class expressions"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class bar {
+					public var baz = 1;
+					public static function Constructor() {
+						baz = 2;
+					}
+				};
+			}
+
+			return (new Foo.bar()).baz;
+		})()
+
+		, 2
+		, "Static constructors inside class expressions"
+	);
 });
 
 /*******************************ACCESS MODIFIERS*******************************/
