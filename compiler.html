@@ -11,7 +11,6 @@
 
 <input type="checkbox" id="check_debug" checked="checked"> Compile debug data
 <input type="checkbox" id="check_warnings" checked="checked"> Show Warnings in Console
-<input type="checkbox" id="check_wrap" checked="checked"> Wrap in Function
 <input type="checkbox" id="check_prettyprint"> Pretty Print
 
 <br><br>
@@ -32,16 +31,15 @@
 <script type="text/javascript">
 function compile() {
 	var $ = function(id) { return document.getElementById(id) };
-	
+
 	var t = +new Date,
 		status = $("compile-time"),
 		compiledCode = "";
-	
+
 	try {
 		var c = new compiler(window.narcissus.jsparse($("code").value), {
 			//Compiler options here
 			debug: $("check_debug").checked,
-			nowrap: !$("check_wrap").checked,
 			warnings: $("check_warnings").checked
 		});
 		c.preprocess();
@@ -50,7 +48,7 @@ function compile() {
 	}catch(e) {
 		status.innerText = status.textContent = "Error: " + e;
 	}
-	
+
 	$("compiled").value = $("check_prettyprint").checked ?
 							js_beautify(compiledCode) :
 							compiledCode;

@@ -1082,7 +1082,7 @@ foo ||= /(?:)/;
 var codeTags = document.getElementsByTagName("code"), code = [], c;
 
 for (var i=0, len=codeTags.length; i<len; i++) {
-	c = new compiler(window.narcissus.jsparse((codeTags[i].innerText||codeTags[i].textContent)), {nowrap:true});
+	c = new compiler(window.narcissus.jsparse(codeTags[i].innerText||codeTags[i].textContent));
 	c.preprocess();
 	try {
 		code.push(codeTags[i].className == "eval" ? eval(c.compile()) : c.compile());

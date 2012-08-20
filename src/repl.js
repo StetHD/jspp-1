@@ -29,7 +29,6 @@
 		try {
 			var c = new compiler(jsparse(line), {
 				debug:		false,
-				nowrap:		true,
 				warnings:	false
 			});
 

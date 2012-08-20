@@ -24,7 +24,7 @@
 $.ajax('src/namespaces.jspp', {
 	dataType: "text",
 	success: function(source) {
-		var c = new compiler(window.narcissus.jsparse((source)));
+		var c = new compiler(window.narcissus.jsparse(source));
 		c.preprocess();
 		eval(c.compile());
 	}

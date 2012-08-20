@@ -33,12 +33,6 @@ var args = paramon.readFormat(process.argv, {
 			maxParams:	0
 		},
 		{
-			name:		'scope',
-			args:		['--scope', '-s'],
-			desc:		'Creates a scope to prevent compiled code from polluting global namespace.',
-			maxParams:	0
-		},
-		{
 			name:		'debug',
 			args:		['--debug', '-d'],
 			desc:		'Compile in debug mode.',
@@ -118,7 +112,6 @@ function ready () {
 	try {
 		compiler = new Compiler(jsparse(code), {
 			debug:		args.debug,
-			nowrap:		args.scope,
 			warnings:	args.warnings
 		});
 

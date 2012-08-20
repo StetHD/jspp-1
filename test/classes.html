@@ -23,7 +23,7 @@
 $.ajax('src/classes.jspp', {
 	dataType: "text",
 	success: function(source) {
-		var c = new compiler(window.narcissus.jsparse((source)), { nowrap:true });
+		var c = new compiler(window.narcissus.jsparse(source));
 		c.preprocess();
 		eval(c.compile());
 	}

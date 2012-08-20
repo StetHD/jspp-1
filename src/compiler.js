@@ -28,7 +28,6 @@ function compiler(ast, options) {
 	//Compiler options:
 	//compiler.options = {
 	//  debug: Boolean //Line #s will be same in compiled code as source code
-	//  nowrap: Boolean //Don't wrap the code with (function(global){...}).call({},this)
 	//  warnings: Boolean //Enable/disable warnings
 	//};
 	this.options = options || { debug: true, warnings: true };
@@ -542,9 +541,8 @@ compiler.prototype.compile = function (ast) {
 
 			if (isGlobalScope) {
 				this.PushToVarCache(ast.varDecls);
-				if (!this.options.nowrap) {
-					out.push("(function(){var global=this;");
-				}
+
+				out.push("var global=(function(){return this}).call();");
 
 				//If we plugged in a type system, declare the conversion functions
 				if (this.typeSystem !== null) {
@@ -619,7 +617,6 @@ compiler.prototype.compile = function (ast) {
 			}
 
 			if (isGlobalScope) {
-				!this.options.nowrap && out.push("}).call();");
 				this.varCache = null;
 			}
 
