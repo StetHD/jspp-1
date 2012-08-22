@@ -880,8 +880,18 @@
                 throw t.newSyntaxError(jsparse.MISSING_FUNCTION_IDENTIFIER);
 
             if (t.match(jsdef.EXTENDS) || t.match(jsdef.COLON)) {
-            	t.get();
-            	f.extends = t.token().value;
+				t.mustMatch(jsdef.IDENTIFIER);
+
+				var root = new Node(t),
+					dots = [root];
+
+				do {
+					if (!t.match(jsdef.DOT)) break;
+					t.mustMatch(jsdef.IDENTIFIER);
+					dots.push(new Node(t, jsdef.DOT, dots[dots.length-1], new Node(t)));
+				} while (t.peek() != jsdef.LEFT_CURLY);
+
+				f.extends = dots.pop();
 			}
 
 			f.static = t.static;

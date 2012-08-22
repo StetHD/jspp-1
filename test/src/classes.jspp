@@ -1495,10 +1495,51 @@ test("Super", function() {
 	);
 	equal(
 		(function() {
+			namespace Foo {
+				export foo = class {
+					protected function bar() { return true }
+				};
+			}
+
+			class baz extends Foo.foo {
+				public function qux() {
+					return super.bar();
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "Access superclass protected method (dot accessor, namespaced)"
+	);
+	equal(
+		(function() {
 			class foo {
 				protected var bar = true;
 			}
 			class baz extends foo {
+				public function qux() {
+					return super.bar;
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "Access superclass protected field (dot accessor)"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				class foo {
+					protected var bar = true;
+				}
+			}
+			class baz extends Foo.foo {
 				public function qux() {
 					return super.bar;
 				}
@@ -2440,6 +2481,666 @@ test("Duplicate Declarations", function() {
 
 		, 2
 		, "Identifier resolution: Duplicate class declarations results in last declaration being used (one expression before one statement, class declarations AFTER instantiation)"
+	);
+});
+
+/***************************EXTEND (DYNAMIC OBJECTS)***************************/
+test("Dynamic Object Inheritance", function() {
+	raises(
+		function() {
+			namespace Foo {
+				export bar = class {
+					private var baz = 1;
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return baz;
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Private field"
+	);
+	raises(
+		function() {
+			namespace Foo {
+				export bar = class {
+					private function baz(){ return 1 }
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return baz;
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Private method"
+	);
+	raises(
+		function() {
+			namespace Foo {
+				export bar = class {
+					private class baz {
+					}
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return baz;
+				}
+			})();
+		}
+
+		, ReferenceError
+		, "Private class"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class {
+					public var baz = 1;
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return baz;
+				}
+			})();
+		})()
+
+		, 1
+		, "Public field"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class {
+					public function baz(){ return 1 }
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return baz();
+				}
+			})();
+		})()
+
+		, 1
+		, "Public method"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class {
+					public class baz {
+						public function qux() {
+							return 1;
+						}
+					}
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return (new baz()).qux();
+				}
+			})();
+		})()
+
+		, 1
+		, "Public class"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class {
+					public var baz = 1;
+				};
+			}
+
+			return (class extends Foo.bar {
+				protected function() {
+					return baz;
+				}
+			})();
+		})()
+
+		, 1
+		, "Protected field"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class {
+					protected function baz(){ return 1 }
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return baz();
+				}
+			})();
+		})()
+
+		, 1
+		, "Protected method"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export bar = class {
+					protected class baz {
+						public function qux() {
+							return 1;
+						}
+					}
+				};
+			}
+
+			return (class extends Foo.bar {
+				public function() {
+					return (new baz()).qux();
+				}
+			})();
+		})()
+
+		, 1
+		, "Protected class"
+	);
+	equal(
+		(function() {
+			namespace Qux {
+				export Quux = class{
+					public var widget = 5;
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = 10;
+					}
+				};
+			}
+
+			return (new Foo.bar()).widget;
+		})()
+
+		, 10
+		, "Public variable assignment"
+	);
+	deepEqual(
+		(function() {
+			namespace Qux {
+				export Quux = class {
+					public var widget = {
+						waldo: 5
+					};
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = {
+							waldo: 10
+						};
+					}
+				};
+			}
+
+			new Foo.bar();
+			return (new Qux.Quux()).widget;
+		})()
+
+		, {
+			waldo: 5
+		}
+		, "Variable assignment of inherited public variable does not overwrite superclass's variable"
+	);
+	equal(
+		(function() {
+			namespace Qux {
+				export Quux = class {
+					public function widget() {
+						return 1;
+					}
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = {
+							waldo: 10
+						};
+					}
+				};
+			}
+
+			new Foo.bar();
+			return typeof (new Qux.Quux()).widget;
+		})()
+
+		, "function"
+		, "Variable assignment of inherited public method does not overwrite superclass's variable"
+	);
+	equal(
+		(function() {
+			namespace Qux {
+				export Quux = class {
+					public class widget {
+						public function doStuff() {
+							return 1;
+						}
+					}
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = {
+							waldo: 10
+						};
+					}
+				};
+			}
+
+			new Foo.bar();
+			return (new (new Qux.Quux()).widget()).doStuff();
+		})()
+
+		, 1
+		, "Variable assignment of inherited public class does not overwrite superclass's variable"
+	);
+	deepEqual(
+		(function() {
+			namespace Qux {
+				export Quux = class{
+					protected var widget = 5;
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = 10;
+					}
+				};
+			}
+
+			return (new Foo.bar()).__PROTECTED__;
+		})()
+
+		, {
+			baz: 5,
+			widget: 10
+		}
+		, "Protected variable assignment"
+	);
+	deepEqual(
+		(function() {
+			namespace Qux {
+				export Quux = class {
+					protected var widget = {
+						waldo: 5
+					};
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = {
+							waldo: 10
+						};
+					}
+				};
+			}
+
+			new Foo.bar();
+			return (new Qux.Quux()).__PROTECTED__.widget;
+		})()
+
+		, {
+			waldo: 5
+		}
+		, "Variable assignment of inherited protected variable does not overwrite superclass's variable"
+	);
+	equal(
+		(function() {
+			namespace Qux {
+				export Quux = class {
+					protected function widget() {
+						return 1;
+					}
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = {
+							waldo: 10
+						};
+					}
+				};
+			}
+
+			new Foo.bar();
+			return typeof (new Qux.Quux()).__PROTECTED__.widget;
+		})()
+
+		, "function"
+		, "Variable assignment of inherited protected method does not overwrite superclass's variable"
+	);
+	equal(
+		(function() {
+			namespace Qux {
+				export Quux = class {
+					protected class widget {
+						public function doStuff() {
+							return 1;
+						}
+					}
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget = {
+							waldo: 10
+						};
+					}
+				};
+			}
+
+			new Foo.bar();
+			return (new (new Qux.Quux()).__PROTECTED__.widget()).doStuff();
+		})()
+
+		, 1
+		, "Variable assignment of inherited protected class does not overwrite superclass's variable"
+	);
+
+	deepEqual(
+		(function() {
+			namespace Qux {
+				export Quux = class{
+					public var widget = { waldo: { quack: 5 } };
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					public var baz = 5;
+
+					public function Constructor() {
+						widget.waldo.quack = 10;
+					}
+				};
+			}
+
+			return (new Foo.bar()).widget;
+		})()
+
+		, {
+			waldo: {
+				quack: 10
+			}
+		}
+		, "Deep variable assignment (3 levels) of inherited public variable"
+	);
+	deepEqual(
+		(function() {
+			namespace Qux {
+				export Quux = class{
+					public var widget = { waldo: { quack: 5 } };
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					public var baz = 5;
+
+					public function Constructor() {
+						widget.waldo.quack = 10;
+					}
+				};
+			}
+
+			new Foo.bar();
+			return (new Qux.Quux()).widget;
+		})()
+
+		, {
+			waldo: {
+				quack: 5
+			}
+		}
+		, "Deep variable assignment (3 levels) of inherited public variable does not overwrite superclass's variable"
+	);
+	deepEqual(
+		(function() {
+			namespace Qux {
+				export Quux = class{
+					protected var widget = { waldo: { quack: 5 } };
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget.waldo.quack = 10;
+					}
+				};
+			}
+
+			return (new Foo.bar()).__PROTECTED__;
+		})()
+
+		, {
+			widget: {
+				waldo: {
+					quack: 10
+				}
+			},
+
+			baz: 5
+		}
+		, "Deep variable assignment (3 levels) of inherited protected variable"
+	);
+	deepEqual(
+		(function() {
+			namespace Qux {
+				export Quux = class{
+					protected var widget = { waldo: { quack: 5 } };
+				};
+			}
+
+			namespace Foo {
+				export bar = class extends Qux.Quux {
+					protected var baz = 5;
+
+					public function Constructor() {
+						widget.waldo.quack = 10;
+					}
+				};
+			}
+
+			new Foo.bar();
+			return (new Qux.Quux()).__PROTECTED__;
+		})()
+
+		, {
+			widget: {
+				waldo: {
+					quack: 5
+				}
+			}
+		}
+		, "Deep variable assignment (3 levels) of inherited protected variable does not overwrite superclass's variable"
+	);
+
+	equal(
+		(function() {
+			namespace Foo {
+				export foo = class {
+					public var bar = true;
+				};
+			}
+
+			class baz extends Foo.foo {
+				public function qux() {
+					return super.bar;
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "super Keyword - Public - Variable"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export foo = class {
+					public function bar() { return true }
+				};
+			}
+
+			class baz extends Foo.foo {
+				public function qux() {
+					return super.bar();
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "super Keyword - Public - Method"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export foo = class {
+					public class bar {
+						public var baz = true;
+					}
+				};
+			}
+
+			class baz extends Foo.foo {
+				public function qux() {
+					return (new super.bar()).baz;
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "super Keyword - Public - Class"
+	);
+		equal(
+		(function() {
+			namespace Foo {
+				export foo = class {
+					protected var bar = true;
+				};
+			}
+
+			class baz extends Foo.foo {
+				public function qux() {
+					return super.__PROTECTED__.bar;
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "super Keyword - Protected - Variable"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export foo = class {
+					protected function bar() { return true }
+				};
+			}
+
+			class baz extends Foo.foo {
+				public function qux() {
+					return super.__PROTECTED__.bar();
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "super Keyword - Protected - Method"
+	);
+	equal(
+		(function() {
+			namespace Foo {
+				export foo = class {
+					public class bar {
+						protected var baz = true;
+					}
+				};
+			}
+
+			class baz extends Foo.foo {
+				public function qux() {
+					return (new super.bar()).__PROTECTED__.baz;
+				}
+			}
+
+			var instance = new baz;
+			return instance.qux();
+		})()
+
+		, true
+		, "super Keyword - Protected - Class"
 	);
 });
 

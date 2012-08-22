@@ -448,13 +448,13 @@ function compiler(ast, options) {
 	this.classes = {};
 	this.classVars = [];
 
-	this.NewClass = function(Node) {
+	this.NewClass = function(Node, superClass) {
 		this.currentClass = Node.name || "";
 		this.classScope = this.classScopes.push(this.NewScope(Node.scopeId, Node));
 
 		this.classes[Node.body.scopeId] = {
 			id: Node.name,
-			__SUPER__: Node.extends || "",
+			__SUPER__: superClass || "",
 			protectedMembers: [],
 			publicMembers: []
 		};
@@ -665,9 +665,10 @@ compiler.prototype.compile = function (ast) {
 				currentItem,
 				duplicates = [],
 				privateMembers = [], //Check for re-declarations of vars/functions
-				hasAccessModifier;
+				hasAccessModifier,
+				extendsClass = ast.extends ? generate(ast.extends) : undefined;
 
-			this.NewClass(ast);
+			this.NewClass(ast, extendsClass);
 
 			hasAccessModifier = ast.public ||
 								ast.private ||
@@ -980,6 +981,28 @@ compiler.prototype.compile = function (ast) {
 			out.push("this.__PROTECTED__={};");
 			out.push("__PDEFINE__&&__PDEFINE__(this,'__PROTECTED__',__NOENUM__);");
 
+			//Inherit public and protected members
+			if (extendsClass) {
+				var prop = this.CreateTempVar(),
+					superClassTmp = this.CreateTempVar(),
+					varArray = this.CreateTempVar();
+
+				//Public members
+				out.push("var " + superClassTmp + "=__SUPER__," +
+						 varArray + "=[];");
+				out.push("for(var " + prop + " in " + superClassTmp + ")");
+				out.push(varArray + ".push(" + prop + "+'=" + superClassTmp + ".'+" + prop + ");");
+				out.push(varArray + ".length&&eval('var '+" + varArray + ".join()+';');");
+
+				//Protected members
+				out.push(superClassTmp + "=__SUPER__.__PROTECTED__;" +
+						 varArray + ".length=0;");
+				out.push("for(var " + prop + " in " + superClassTmp + "){");
+				out.push(varArray + ".push(" + prop + "+'=" + superClassTmp + ".'+" + prop + ");");
+				out.push("this.__PROTECTED__[" + prop + "]=" + superClassTmp + "[" + prop +"];}");
+				out.push(varArray + ".length&&eval('var '+" + varArray + ".join()+';');");
+			}
+
 			//Push methods - we do this separately in case of overloading
 			//Methods should come first to make class method declarations behave
 			//like JS function declarations
@@ -1030,7 +1053,8 @@ compiler.prototype.compile = function (ast) {
 							if (j == 0) {
 								//public methods
 								if (currentMethod.public) {
-									_out.push("this." + methods[i][0].name);
+									_out.push("var " + methods[i][0].name +
+											  "=this." + methods[i][0].name);
 								}
 								//private methods
 								else if (currentMethod.private) {
@@ -1038,7 +1062,8 @@ compiler.prototype.compile = function (ast) {
 								}
 								//protected methods
 								else if (currentMethod.protected) {
-									_out.push("this.__PROTECTED__." +
+									_out.push("var " + methods[i][0].name +
+											  "=this.__PROTECTED__." +
 											  methods[i][0].name);
 								}
 
@@ -1269,11 +1294,11 @@ compiler.prototype.compile = function (ast) {
 
 			out.push("}).call(");
 
-			if (ast.extends) {
+			if (extendsClass) {
 				out.push("(function(o){return (F.prototype=__SUPER__=" +
 						 (superClassId !== void 0 ? "__CLASS" + superClassId + "__=" : "") +
 						 "o,new F);function F(){}})(" +
-						 "new " + ast.extends + ")");
+						 "new " + extendsClass + ")");
 			}
 			else {
 				out.push("{}");
@@ -1424,6 +1449,8 @@ compiler.prototype.compile = function (ast) {
 					}, ast);
 				}
 
+				if (!ast.functionForm) out.push("var " + ast.name + "=");
+
 				out.push("this.__PROTECTED__." + ast.name + "=function(");
 			}
 			else if (ast.public) {
@@ -1433,6 +1460,8 @@ compiler.prototype.compile = function (ast) {
 						message: "Missing method identifier"
 					}, ast);
 				}
+
+				if (!ast.functionForm) out.push("var " + ast.name + "=");
 
 				out.push("this." + ast.name + "=function(");
 			}
@@ -2175,7 +2204,7 @@ compiler.prototype.compile = function (ast) {
 
 					out.push("=" + generate(varList[i].value));
 				}
-				else out.push("=undefined");
+				else out.push("=void 0");
 
 				out.push(";");
 
@@ -2368,55 +2397,60 @@ compiler.prototype.compile = function (ast) {
 
 				//Handle protected members of super class
 				if (ast[0].value == "super" && getSuperClass) {
-					var classMembers,
-						findIdentifier = ast[1].value;
+					if (getSuperClass.split(".").length) {
+						//out.push("__PROTECTED__.");
+					}
+					else {
+						var classMembers,
+							findIdentifier = ast[1].value;
 
-					//Loop through the scope chain until we can find the
-					//Activation Object for the super class
-					var i = 0,
-						j = 0,
-						_currentScope,
-						len = this.scopeChain.length,
-						_len = 0;
+						//Loop through the scope chain until we can find the
+						//Activation Object for the super class
+						var i = 0,
+							j = 0,
+							_currentScope,
+							len = this.scopeChain.length,
+							_len = 0;
 
-					for (; i < len; i++) {
-						_currentScope = this.scopeChain[i];
-						j = 0;
-						_len = _currentScope.length;
+						for (; i < len; i++) {
+							_currentScope = this.scopeChain[i];
+							j = 0;
+							_len = _currentScope.length;
 
-						for (; j < _len; j++) {
-							if (this.scopeChain[i][j].name == getSuperClass) {
-								classMembers = this.scopeChain[i][j].Variables;
+							for (; j < _len; j++) {
+								if (this.scopeChain[i][j].name == getSuperClass) {
+									classMembers = this.scopeChain[i][j].Variables;
+									break;
+								}
+							}
+						}
+
+						//Now that we've found the super class, loop through its
+						//members to find out if we're accessing a protected member
+						for (var i = 0, len = classMembers.length; i < len; i++) {
+							if (classMembers[i].identifier == findIdentifier &&
+								classMembers[i]["[[Protected]]"]) {
+								out.push("__PROTECTED__.");
+
 								break;
 							}
 						}
 					}
+					//Handle protected members of current class
+					/*else if (ast[0].value == "this") {
+						var classMembers = currentClass.Variables,
+							findIdentifier = ast[1].value;
 
-					//Now that we've found the super class, loop through its
-					//members to find out if we're accessing a protected member
-					for (var i = 0, len = classMembers.length; i < len; i++) {
-						if (classMembers[i].identifier == findIdentifier &&
-							classMembers[i]["[[Protected]]"]) {
-							out.push("__PROTECTED__.");
+						for (var i = 0, len = classMembers.length; i < len; i++) {
+							if (classMembers[i].identifier == findIdentifier &&
+								classMembers[i]["[[Protected]]"]) {
+								out.push("__PROTECTED__.");
 
-							break;
+								break;
+							}
 						}
-					}
+					}*/
 				}
-				//Handle protected members of current class
-				/*else if (ast[0].value == "this") {
-					var classMembers = currentClass.Variables,
-						findIdentifier = ast[1].value;
-
-					for (var i = 0, len = classMembers.length; i < len; i++) {
-						if (classMembers[i].identifier == findIdentifier &&
-							classMembers[i]["[[Protected]]"]) {
-							out.push("__PROTECTED__.");
-
-							break;
-						}
-					}
-				}*/
 			}
 
 			//Denote object member to prevent compiler warnings
@@ -2498,33 +2532,76 @@ compiler.prototype.compile = function (ast) {
 			else if (ast[0].type == jsdef.INDEX) {
 			}*/
 
-			var id = generate(ast[0]);
-			out.push(id);
+			var id = generate(ast[0]),
+				currentClass = this.CurrentClass(),
+				assignment = [],
+				currentClassId = currentClass ? this.CurrentClassScopeId() : undefined,
+				classData = this.classes[currentClassId];
 
 			if (ast.value == "=") {
-				out.push(ast.value);
+				assignment.push(ast.value);
+				assignment.push(generate(ast[1]));
 			}
 			else {
 				//Logical assignment operators
 				if (ast.value == "&&" || ast.value == "||") {
-					out.push("=" + id + ast.value);
+					assignment.push("=" + id + ast.value);
+					assignment.push(generate(ast[1]));
 				}
 				//Exponent operator
 				else if (ast.value == "**") {
-					out.push("=Math.pow(" + id + "," + generate(ast[1]) + ")");
-					break;
+					assignment.push("=Math.pow(" + id + "," + generate(ast[1]) + ")");
 				}
 				//Existential operator
 				else if (ast.value == "?") {
-					out.push("=" + id + "==null?" + generate(ast[1]) + ":" + id);
-					break;
+					assignment.push("=" + id + "==null?" + generate(ast[1]) + ":" + id);
 				}
 				else {
-					out.push(ast.value + "=");
+					assignment.push(ast.value + "=");
+					assignment.push(generate(ast[1]));
 				}
 			}
 
-			out.push(generate(ast[1]));
+			assignment = assignment.join("");
+
+			if (currentClass && classData &&
+				typeof classData.__SUPER__ == "string" &&
+				classData.__SUPER__.split(".").length > 1) {
+				var splitId = id.split(".");
+
+				//Left-hand side of assignment is just a plain identifier
+				if (splitId.length == 1) {
+					//Handle public properties
+					out.push("if('" + id + "' in __CLASS" + currentClassId + "__)");
+					out.push("__CLASS" + currentClassId + "__." + id);
+					out.push(assignment + ";");
+
+					//Handle protected properties
+					out.push("else if('" + id + "' in __CLASS" + currentClassId + "__.__PROTECTED__)");
+					out.push("__CLASS" + currentClassId + "__.__PROTECTED__." + id);
+					out.push(assignment + ";");
+				}
+				//Left-hand side of assignment involves a dot operator
+				else {
+					var idConditions = [];
+
+					for (var i = splitId.length - 1; i > 0; i--) {
+						idConditions.push('"' + splitId.pop() + '" in ' + splitId.join("."));
+					}
+					idConditions = idConditions.reverse();
+					out.push("if(" + idConditions.join("&&") + ")" +
+							 id + assignment + ";");
+				}
+
+				//Handle regular properties (plain identifier, no dot/index)
+				out.push("else " + id + assignment + ";");
+			}
+			//Not inside a class or the class does not extend via dynamic
+			//inheritance so regular assignment
+			else {
+				out.push(id + assignment);
+			}
+
 			break;
 
 		//Statements
