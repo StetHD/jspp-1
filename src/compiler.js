@@ -1222,6 +1222,7 @@ compiler.prototype.compile = function (ast) {
 						}
 						out.push(";");
 					}
+					constructor.body.params = constructor.params;
 					out.push(generate(constructor.body));
 
 					out.push("return " + classId + "};");
