@@ -2363,7 +2363,13 @@ compiler.prototype.compile = function (ast) {
 								}
 							}
 
-							if (!inheritedMember) {
+							if (!inheritedMember &&
+                            
+                                ( (findIdentifier != "arguments" &&
+                                   findIdentifier != "args") ||
+                                   
+                                   !_this.CurrentScope().isFunction) )
+                            {
 								!_this.isObjProperty && _this.NewWarning({
 									type: ReferenceError,
 									message: "Variable '" + findIdentifier +
