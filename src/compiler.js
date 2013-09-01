@@ -167,7 +167,8 @@ function compiler(ast, options) {
 		this.TypeCheck(node);
 
 		//If this is the global scope, push some declarations to avoid compiler warnings
-		if (this.scopeChain.length == 1) {
+		var isGlobalScope = this.scopeChain.length == 1;
+		if (isGlobalScope) {
 			//Note: Include es3.js or this won't run
 			if (typeof CreateGlobal == "function") {
 				CreateGlobal(node);
@@ -178,6 +179,23 @@ function compiler(ast, options) {
 					message: 'Compiler global header file "typed-es3.js" not found.'
 				}, {lineno: -1});
 			}
+		}
+		
+		//Add to scope table
+		if (this.options.symbols) {
+			var tokenType = node.type;
+			if (tokenType === jsdef.SCRIPT && !isGlobalScope) {
+				tokenType = jsdef.FUNCTION;
+			}
+			
+			this.scopeTable.push({
+				  uid: id
+				, line: node.lineno
+				, start: node.start
+				, end: node.end
+				, name: isGlobalScope ? "__GLOBAL__" : node.name
+				, token: tokenType
+			});
 		}
 
 		return this.scopeChain[this.scopeChain.length-1];
@@ -439,6 +457,142 @@ function compiler(ast, options) {
 	this.breakStmt = ""; //Track break statements
 	this.continueStmt = ""; //Track continue statements
 	this.inCase = false; //Are we inside a case/default statement?
+	
+	//Symbol Table
+	this.symbols = [];
+	this.SymbolTable = {};
+	this.SymbolTable.insertVariable = function(node) {
+		var scopeId = getSymbolTableScopeId();
+		_this.symbols.push({
+			  id: node.identifier
+			, original: node.identifier
+			, start: node.value.start
+			, end: node.value.end
+			, line: node.value.lineno
+			, scope: scopeId
+			, token: jsdef.VAR
+			, type: node.vartype
+		});
+	};
+	this.SymbolTable.insertBlockVariable = function(node, newIdentifier, oldIdentifier) {
+		var scopeId = getSymbolTableScopeId();
+		_this.symbols.push({
+			  id: newIdentifier // the compiled identifier
+			, scopeObject: (_this.ScopeId + scopeId).toString() // the container object which holds the scope's identifiers
+			, original: oldIdentifier // the identifier used in the source text
+			, start: node.value.start
+			, end: node.value.end
+			, line: node.value.lineno
+			, scope: scopeId
+			, token: jsdef.LET
+			, type: node.vartype
+		});
+	};
+	this.SymbolTable.insertFunction = function(node) {
+		var scopeId = getSymbolTableScopeId();
+		
+		//Process function parameters
+		var paramsList = [];
+		for (var i=0, len=node.paramsList.length; i<len; i++) {
+			paramsList.push({
+				  id: node.paramsList[i].value
+				, start: node.paramsList[i].start
+				, end: node.paramsList[i].end
+				, line: node.paramsList[i].lineno
+				, restParameter: !!node.paramsList[i].restParameter
+			});
+		}
+		
+		_this.symbols.push({
+			  id: node.name
+			, original: node.name
+			, start: node.start
+			, end: node.end
+			, line: node.lineno
+			, scope: scopeId
+			, token: jsdef.FUNCTION
+			, parameters: paramsList
+		});
+	};
+	this.SymbolTable.insertClass = function(node) {
+		//Process class fields
+		var classFields = [];
+		if (node.body.varDecls) {
+			for (var i = 0, len = node.body.varDecls.length; i < len; i++) {
+				for (var j = 0; j < node.body.varDecls[i].length; j++) {
+					classFields.push({
+						  id: node.body.varDecls[i][j].name
+						, start: node.body.varDecls[i][j].start
+						, end: node.body.varDecls[i][j].end
+						, line: node.body.varDecls[i][j].lineno
+						
+						, "public": node.body.varDecls[i]["public"]
+						, "private": node.body.varDecls[i]["private"]
+						, "protected": node.body.varDecls[i]["protected"]
+						, "static": node.body.varDecls[i]["static"]
+					});
+				}
+			}
+		}
+		
+		//Process class methods and nested classes
+		var classMethods = [];
+		var nestedClasses = [];
+		if (node.body.funDecls) {
+			var pushToRef;
+			for (var i = 0, len = node.body.funDecls.length; i < len; i++) {
+				if (node.body.funDecls[i].type === jsdef.FUNCTION) {
+					pushToRef = classMethods;
+				}
+				else if (node.body.funDecls[i].type === jsdef.CLASS) {
+					pushToRef = nestedClasses;
+				}
+				
+				pushToRef.push({
+					  id: node.body.funDecls[i].name
+					, start: node.body.funDecls[i].start
+					, end: node.body.funDecls[i].end
+					, line: node.body.funDecls[i].lineno
+					
+					, "public": node.body.funDecls[i]["public"]
+					, "private": node.body.funDecls[i]["private"]
+					, "protected": node.body.funDecls[i]["protected"]
+					, "static": node.body.funDecls[i]["static"]
+				});
+			}
+		}
+		
+		var scopeId = getSymbolTableScopeId();
+		_this.symbols.push({
+			  id: node.name
+			, original: node.name
+			, "extends": node["extends"]
+			, start: node.start
+			, end: node.end
+			, line: node.lineno
+			, scope: scopeId
+			, token: jsdef.CLASS
+			
+			, fields: classFields
+			, methods: classMethods
+			, classes: nestedClasses
+		});
+	};
+	function getSymbolTableScopeId() {
+		var currentScope = _this.CurrentScope(), scopeId = -1;
+		switch (currentScope.type) {
+			case jsdef.SCRIPT:
+			case jsdef.BLOCK:
+				return currentScope.scopeId;
+			case jsdef.CLASS:
+				return currentScope.body.scopeId;
+		}
+		
+		return -1;
+	}
+	
+	//Scope Table
+	this.scopeTable = [];
 
 	//Classes
 	this.currentClass = "";
@@ -618,6 +772,12 @@ compiler.prototype.compile = function (ast) {
 
 			if (isGlobalScope) {
 				this.varCache = null;
+				
+				//Output symbol table
+				if (this.options.symbols) {
+					out.push("var __SYMBOLS__ = " + JSON.stringify(this.symbols) + ";");
+					out.push("var __SCOPES__ = " + JSON.stringify(this.scopeTable) + ";");
+				}
 			}
 
 			this.ExitScope();
@@ -668,6 +828,10 @@ compiler.prototype.compile = function (ast) {
 				hasAccessModifier,
 				extendsClass = ast.extends ? generate(ast.extends) : undefined;
 
+			if (this.options.symbols) {
+				this.SymbolTable.insertClass(ast);
+			}
+			
 			this.NewClass(ast, extendsClass);
 
 			hasAccessModifier = ast.public ||
@@ -1403,6 +1567,11 @@ compiler.prototype.compile = function (ast) {
 		case jsdef.FUNCTION:
 			this.TypeCheck(ast);
 			this.PushToVarCache(ast.body.varDecls);
+			
+			ast.body.name = ast.name;
+			if (this.options.symbols && !this.InsideClass()) {
+				this.SymbolTable.insertFunction(ast);
+			}
 
 			if (ast.static) {
 				if (!ast.name) {
@@ -2007,6 +2176,10 @@ compiler.prototype.compile = function (ast) {
 				}
 
 				out.push(currentId = varList[i].identifier);
+				
+				if (!insideClass && this.options.symbols) {
+					this.SymbolTable.insertVariable(varList[i]);
+				}
 
 				if ("value" in varList[i]) {
 					if (varList[i].value && varList[i].value.name === void 0) {
@@ -2145,6 +2318,10 @@ compiler.prototype.compile = function (ast) {
 					"[[Type]]": ast[item].vartype,
 					"[[Block]]": true
 				};
+				
+				if (this.options.symbols) {
+					this.SymbolTable.insertBlockVariable(ast[item], id, oid);
+				}
 
 				//Assign initial value
 				if (ast[item].initializer) {
