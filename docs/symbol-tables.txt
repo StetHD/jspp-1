@@ -168,7 +168,7 @@ var __SCOPES__ = [
 		line: Number  // The line number where the scope begins
 		start: Number // The starting character (relative to the source text) where the scope begins
 		end: Number   // The ending character (relative to the entire source text) where the scope ends
-		name: String  // The name of the scope. If it's the global scope, the value is "__GLOBAL__"
+		name: String  // The name of the scope. If it's the global scope, the value is "__GLOBAL__". Anonymous functions and blocks do not have names.
 		token: Number // The token type from Narcissus. ex. jsdef.CLASS, jsdef.FUNCTION, jsdef.BLOCK
 	}
 ];

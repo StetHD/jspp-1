@@ -629,7 +629,7 @@ function compiler(ast, options) {
 
 	this.NewClass = function(Node, superClass) {
 		this.currentClass = Node.name || "";
-		this.classScope = this.classScopes.push(this.NewScope(Node.scopeId, Node));
+		this.classScope = this.classScopes.push(this.NewScope(Node.body.scopeId, Node));
 
 		this.classes[Node.body.scopeId] = {
 			id: Node.name,
