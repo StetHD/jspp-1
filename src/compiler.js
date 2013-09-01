@@ -496,6 +496,7 @@ function compiler(ast, options) {
 		for (var i=0, len=node.paramsList.length; i<len; i++) {
 			paramsList.push({
 				  id: node.paramsList[i].value
+				, original: node.paramsList[i].value
 				, start: node.paramsList[i].start
 				, end: node.paramsList[i].end
 				, line: node.paramsList[i].lineno
@@ -522,6 +523,7 @@ function compiler(ast, options) {
 				for (var j = 0; j < node.body.varDecls[i].length; j++) {
 					classFields.push({
 						  id: node.body.varDecls[i][j].name
+						, original: node.body.varDecls[i][j].name
 						, start: node.body.varDecls[i][j].start
 						, end: node.body.varDecls[i][j].end
 						, line: node.body.varDecls[i][j].lineno
@@ -550,6 +552,7 @@ function compiler(ast, options) {
 				
 				pushToRef.push({
 					  id: node.body.funDecls[i].name
+					, original: node.body.funDecls[i].name
 					, start: node.body.funDecls[i].start
 					, end: node.body.funDecls[i].end
 					, line: node.body.funDecls[i].lineno
@@ -828,7 +831,7 @@ compiler.prototype.compile = function (ast) {
 				hasAccessModifier,
 				extendsClass = ast.extends ? generate(ast.extends) : undefined;
 
-			if (this.options.symbols) {
+			if (this.options.symbols && !ast.nestedParent) {
 				this.SymbolTable.insertClass(ast);
 			}
 			
