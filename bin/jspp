@@ -69,6 +69,12 @@ var args = paramon.readFormat(process.argv, {
 			desc:		'The output target. Default=-',
 			maxParams:	1,
 			minParams:	1
+		},
+		{
+			name:		'symbols',
+			args:		['--symbols', '-s'],
+			desc:		'Output symbol tables.',
+			maxParams:	0
 		}
 	]
 });
@@ -112,7 +118,8 @@ function ready () {
 	try {
 		compiler = new Compiler(jsparse(code), {
 			debug:		args.debug,
-			warnings:	args.warnings
+			warnings:	args.warnings,
+			symbols:	args.symbols
 		});
 
 		compiler.preprocess();
