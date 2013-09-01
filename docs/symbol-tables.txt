@@ -124,6 +124,18 @@ var __SYMBOLS__ = [
 				private: Boolean
 				protected: Boolean
 				static: Boolean
+				
+				//Method parameters
+				parameters: [
+					{
+						id: String             // The parameter's compiled identifier
+						original: String       // The parameter's original identifier as represented in the source text
+						start: Number          // The character (relative to the entire source text) where the parameter begins
+						end: Number            // The character (relative to the entire source text) where the parameter ends
+						line: Number           // The line number where the parameter begins
+						restParameter: Boolean // Is the parameter a rest parameter?
+					}
+				]
 			}
 		]
 		

@@ -541,27 +541,48 @@ function compiler(ast, options) {
 		var classMethods = [];
 		var nestedClasses = [];
 		if (node.body.funDecls) {
-			var pushToRef;
 			for (var i = 0, len = node.body.funDecls.length; i < len; i++) {
 				if (node.body.funDecls[i].type === jsdef.FUNCTION) {
-					pushToRef = classMethods;
+					var paramsList = [], methodParams = node.body.funDecls[i].paramsList;
+					for (var j=0, _len=methodParams.length; j<_len; j++) {
+						paramsList.push({
+							  id: methodParams[j].value
+							, original: methodParams[j].value
+							, start: methodParams[j].start
+							, end: methodParams[j].end
+							, line: methodParams[j].lineno
+							, restParameter: !!methodParams[j].restParameter
+						});
+					}
+					
+					classMethods.push({
+						  id: node.body.funDecls[i].name
+						, original: node.body.funDecls[i].name
+						, start: node.body.funDecls[i].start
+						, end: node.body.funDecls[i].end
+						, line: node.body.funDecls[i].lineno
+						, parameters: paramsList
+						
+						, "public": node.body.funDecls[i]["public"]
+						, "private": node.body.funDecls[i]["private"]
+						, "protected": node.body.funDecls[i]["protected"]
+						, "static": node.body.funDecls[i]["static"]
+					});
 				}
 				else if (node.body.funDecls[i].type === jsdef.CLASS) {
-					pushToRef = nestedClasses;
+					nestedClasses.push({
+						  id: node.body.funDecls[i].name
+						, original: node.body.funDecls[i].name
+						, start: node.body.funDecls[i].start
+						, end: node.body.funDecls[i].end
+						, line: node.body.funDecls[i].lineno
+						
+						, "public": node.body.funDecls[i]["public"]
+						, "private": node.body.funDecls[i]["private"]
+						, "protected": node.body.funDecls[i]["protected"]
+						, "static": node.body.funDecls[i]["static"]
+					});
 				}
-				
-				pushToRef.push({
-					  id: node.body.funDecls[i].name
-					, original: node.body.funDecls[i].name
-					, start: node.body.funDecls[i].start
-					, end: node.body.funDecls[i].end
-					, line: node.body.funDecls[i].lineno
-					
-					, "public": node.body.funDecls[i]["public"]
-					, "private": node.body.funDecls[i]["private"]
-					, "protected": node.body.funDecls[i]["protected"]
-					, "static": node.body.funDecls[i]["static"]
-				});
 			}
 		}
 		
