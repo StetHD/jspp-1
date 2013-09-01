@@ -570,6 +570,7 @@ function compiler(ast, options) {
 			  id: node.name
 			, original: node.name
 			, "extends": node["extends"]
+			, extends_original: node["extends"]
 			, start: node.start
 			, end: node.end
 			, line: node.lineno

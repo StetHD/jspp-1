@@ -1,0 +1,162 @@
+In order to output symbol tables, pass --symbols to the CLI compiler.
+
+If you are programmatically invoking the JavaScript++ compiler, use:
+
+new compiler( /* ... */ , {
+	symbols: true
+	// ...
+	// ...
+	// specify other options if required
+	// ...
+});
+
+**********************
+API
+**********************
+compilerInstance.insertVariable(ASTNode node);
+compilerInstance.insertBlockVariable(ASTNode node, string newIdentifier, string oldIdentifier);
+compilerInstance.insertFunction(ASTNode node);
+compilerInstance.insertClass(ASTNode node);
+
+**********************
+Symbol Table Structure
+**********************
+
+var __SYMBOLS__ = [
+	//"var" statements
+	{
+		id: String       // The compiled identifier
+		original: String // The original identifier as represented in the source text
+		start: Number    // The character (relative to the entire source text) where the identifier begins
+		end: Number      // The character (relative to the entire source text) where the identifier ends
+		line: Number     // The line number where the identifier begins
+		scope: Number    // The unique ID for the scope where the variable was declared
+		token: Number    // The token type from Narcissus. ex. jsdef.CLASS, jsdef.FUNCTION, jsdef.BLOCK
+	}
+	
+	//"let" statements
+	{
+		id: String       // The compiled identifier
+		original: String // The original identifier as represented in the source text
+		start: Number    // The character (relative to the entire source text) where the identifier begins
+		end: Number      // The character (relative to the entire source text) where the identifier ends
+		line: Number     // The line number where the identifier begins
+		scope: Number    // The unique ID for the scope where the variable was declared
+		token: Number    // The token type from Narcissus. ex. jsdef.CLASS, jsdef.FUNCTION, jsdef.BLOCK
+		
+		//The "scope container" object which holds the block-scoped variable.
+		//Combine "scopeObject" with "id" to get the full compiled name of the block-scoped variable.
+		//
+		//Example:
+		//    Source: let x = 1;
+		//    Compiled: _bScope4.a = 1;
+		//
+		//In the example, "scopeObject" will be "_bScope4" and "id" will be "a".
+		//scopeObject + "." + id will produce "_bScope4.a" which is the full compiled name
+		//for the block-scoped variable. "original," as its name implies, will give you
+		//the original identifier name from the source text (in the example, "x")
+		scopeObject: String
+	}
+	
+	//"function" declarations and expression
+	{
+		id: String       // The compiled function name
+		original: String // The original function name as represented in the source text
+		start: Number    // The character (relative to the entire source text) where the function begins
+		end: Number      // The character (relative to the entire source text) where the function ends
+		line: Number     // The line number where the function begins
+		scope: Number    // The unique ID for the scope where the function was declared
+		token: Number    // The token type from Narcissus. ex. jsdef.CLASS, jsdef.FUNCTION, jsdef.BLOCK
+		
+		//Function parameters
+		parameters: [
+			{
+				id: String             // The parameter's compiled identifier
+				original: String       // The parameter's original identifier as represented in the source text
+				start: Number          // The character (relative to the entire source text) where the parameter begins
+				end: Number            // The character (relative to the entire source text) where the parameter ends
+				line: Number           // The line number where the parameter begins
+				restParameter: Boolean // Is the parameter a rest parameter?
+			}
+		]
+	}
+	
+	//"class" declarations
+	{
+		id: String               // The compiled class name
+		original: String         // The original class name as represented in the source text
+		extends: String          // The superclass compiled identifier
+		extends_original: String // The original superclass identifier as represented in the source text
+		start: Number            // The character (relative to the entire source text) where the class begins
+		end: Number              // The character (relative to the entire source text) where the class ends
+		line: Number             // The line number where the class begins
+		scope: Number            // The unique ID for the scope where the class was declared
+		token: Number            // The token type from Narcissus. ex. jsdef.CLASS, jsdef.FUNCTION, jsdef.BLOCK
+		
+		//Class fields
+		fields: [
+			{
+				id: String       // The compiled name of the class field
+				original: String // The original name of the class field as represented in the source text
+				start: Number    // The character (relative to the entire source text) where the field begins
+				end: Number      // The character (relative to the entire source text) where the field ends
+				line: Number     // The line number where the class field begins
+				
+				//Access modifiers
+				public: Boolean
+				private: Boolean
+				protected: Boolean
+				static: Boolean
+			}
+		]
+		
+		//Class methods
+		methods: [
+			{
+				id: String       // The compiled name of the class method
+				original: String // The original name of the class method as represented in the source text
+				start: Number    // The character (relative to the entire source text) where the method begins
+				end: Number      // The character (relative to the entire source text) where the method ends
+				line: Number     // The line number where the class method begins
+				
+				//Access modifiers
+				public: Boolean
+				private: Boolean
+				protected: Boolean
+				static: Boolean
+			}
+		]
+		
+		//Nested classes
+		classes: [
+			{
+				id: String       // The compiled name of the nested class
+				original: String // The original name of the nested class as represented in the source text
+				start: Number    // The character (relative to the entire source text) where the nested class begins
+				end: Number      // The character (relative to the entire source text) where the nested class ends
+				line: Number     // The line number where the class nested class begins
+				
+				//Access modifiers
+				public: Boolean
+				private: Boolean
+				protected: Boolean
+				static: Boolean
+			}
+		]
+	}
+];
+
+**********************
+Scope Table Structure
+**********************
+
+var __SCOPES__ = [
+	{
+		uid: Number   // The unique ID for the scope
+		line: Number  // The line number where the scope begins
+		start: Number // The starting character (relative to the source text) where the scope begins
+		end: Number   // The ending character (relative to the entire source text) where the scope ends
+		name: String  // The name of the scope. If it's the global scope, the value is "__GLOBAL__"
+		token: Number // The token type from Narcissus. ex. jsdef.CLASS, jsdef.FUNCTION, jsdef.BLOCK
+	}
+];
