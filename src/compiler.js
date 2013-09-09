@@ -29,17 +29,43 @@ function compiler(ast, options) {
 	//compiler.options = {
 	//  debug: Boolean //Line #s will be same in compiled code as source code
 	//  warnings: Boolean //Enable/disable warnings
+	//	symbols: Boolean //Enable/disable symbol plugin
 	//};
 	this.options = options || { debug: true, warnings: true };
 	this.ast = ast;
+	
+	//File handling
+	this.currFile = "";
+	this.currFileStartLine = 0;
+	this.currFileOffset = 0;
+	this.FILE_DELIM = "script_begin:///";	
 
 	this.errors = [];
-	this.warnings = [];
+	this.warnings = [];             
+	
+	//Create SymbolTable plugin or null interface. 	
+	this.SymbolTable = this.options.symbols ? new SymbolTablePlugin(this) :   
+	{                                    
+		// Interface for symbol table plugin:	
+		insertScope:			function(id,ast){},			// Record Scope
+		insertClass:			function(ast){},			// Record Class Symbol
+		insertFunction:			function(ast){},			// Record Function Symbol
+		insertVariable:			function(varListItem){},	// Record Variable Symbol (var x)
+		insertBlockVariable:	function(ast,id,oid){},		// Record Block Varaible Symbol (let x)
+		insertIdentifier:		function(ast,out,type){},	// Record spatial Identifier Symbol in code ( x=5; )
+		insertReference:		function(ast,out){},		// Record spatial Reference Symbol in code ( a.b.c )
+		insertPrototypeMember:	function(ast,out){}			// Record Prototype member Symbol (ClassXXX.prototype.YYY)
+	};
+	
 	this.NewWarning = function (e, node) {
 		if (!this.options.warnings) return false;
 
 		if (node) {
-			e.line = node.lineno;
+			var offset = (!_this.currFile ? 0 : this.currFileOffset-(node.lineno-this.currFileStartLine)+1);
+			e.line = node.lineno - this.currFileStartLine;
+			e.start = node.start - offset;
+			e.end = node.end - offset;
+			e.file = this.currFile;
 		}
 		e.category = "Warning";
 		e.chara = {
@@ -55,9 +81,14 @@ function compiler(ast, options) {
 
 		this.warnings.push(e);
 	};
+	
 	this.NewError = function (e, node) {
 		if (node) {
-			e.line = node.lineno;
+			var offset = (!_this.currFile ? 0 : this.currFileOffset-(node.lineno-this.currFileStartLine)+1);
+			e.line = node.lineno - this.currFileStartLine;
+			e.start = node.start - offset;
+			e.end = node.end - offset;
+			e.file = this.currFile;
 		}
 		e.category = "Error";
 		e.chara = {
@@ -182,22 +213,8 @@ function compiler(ast, options) {
 		}
 		
 		//Add to scope table
-		if (this.options.symbols) {
-			var tokenType = node.type;
-			if (tokenType === jsdef.SCRIPT && !isGlobalScope) {
-				tokenType = jsdef.FUNCTION;
-			}
-			
-			this.scopeTable.push({
-				  uid: id
-				, line: node.lineno
-				, start: node.start
-				, end: node.end
-				, name: isGlobalScope ? "__GLOBAL__" : node.name
-				, token: tokenType
-			});
-		}
-
+		_this.SymbolTable.insertScope(id,node);
+		
 		return this.scopeChain[this.scopeChain.length-1];
 	};
 
@@ -457,167 +474,6 @@ function compiler(ast, options) {
 	this.breakStmt = ""; //Track break statements
 	this.continueStmt = ""; //Track continue statements
 	this.inCase = false; //Are we inside a case/default statement?
-	
-	//Symbol Table
-	this.symbols = [];
-	this.SymbolTable = {};
-	this.SymbolTable.insertVariable = function(node) {
-		var scopeId = getSymbolTableScopeId();
-		_this.symbols.push({
-			  id: node.identifier
-			, original: node.identifier
-			, start: node.value.start
-			, end: node.value.end
-			, line: node.value.lineno
-			, scope: scopeId
-			, token: jsdef.VAR
-			, type: node.vartype
-		});
-	};
-	this.SymbolTable.insertBlockVariable = function(node, newIdentifier, oldIdentifier) {
-		var scopeId = getSymbolTableScopeId();
-		_this.symbols.push({
-			  id: newIdentifier // the compiled identifier
-			, scopeObject: (_this.ScopeId + scopeId).toString() // the container object which holds the scope's identifiers
-			, original: oldIdentifier // the identifier used in the source text
-			, start: node.value.start
-			, end: node.value.end
-			, line: node.value.lineno
-			, scope: scopeId
-			, token: jsdef.LET
-			, type: node.vartype
-		});
-	};
-	this.SymbolTable.insertFunction = function(node) {
-		var scopeId = getSymbolTableScopeId();
-		
-		//Process function parameters
-		var paramsList = [];
-		for (var i=0, len=node.paramsList.length; i<len; i++) {
-			paramsList.push({
-				  id: node.paramsList[i].value
-				, original: node.paramsList[i].value
-				, start: node.paramsList[i].start
-				, end: node.paramsList[i].end
-				, line: node.paramsList[i].lineno
-				, restParameter: !!node.paramsList[i].restParameter
-			});
-		}
-		
-		_this.symbols.push({
-			  id: node.name
-			, original: node.name
-			, start: node.start
-			, end: node.end
-			, line: node.lineno
-			, scope: scopeId
-			, token: jsdef.FUNCTION
-			, parameters: paramsList
-		});
-	};
-	this.SymbolTable.insertClass = function(node) {
-		//Process class fields
-		var classFields = [];
-		if (node.body.varDecls) {
-			for (var i = 0, len = node.body.varDecls.length; i < len; i++) {
-				for (var j = 0; j < node.body.varDecls[i].length; j++) {
-					classFields.push({
-						  id: node.body.varDecls[i][j].name
-						, original: node.body.varDecls[i][j].name
-						, start: node.body.varDecls[i][j].start
-						, end: node.body.varDecls[i][j].end
-						, line: node.body.varDecls[i][j].lineno
-						
-						, "public": node.body.varDecls[i]["public"]
-						, "private": node.body.varDecls[i]["private"]
-						, "protected": node.body.varDecls[i]["protected"]
-						, "static": node.body.varDecls[i]["static"]
-					});
-				}
-			}
-		}
-		
-		//Process class methods and nested classes
-		var classMethods = [];
-		var nestedClasses = [];
-		if (node.body.funDecls) {
-			for (var i = 0, len = node.body.funDecls.length; i < len; i++) {
-				if (node.body.funDecls[i].type === jsdef.FUNCTION) {
-					var paramsList = [], methodParams = node.body.funDecls[i].paramsList;
-					for (var j=0, _len=methodParams.length; j<_len; j++) {
-						paramsList.push({
-							  id: methodParams[j].value
-							, original: methodParams[j].value
-							, start: methodParams[j].start
-							, end: methodParams[j].end
-							, line: methodParams[j].lineno
-							, restParameter: !!methodParams[j].restParameter
-						});
-					}
-					
-					classMethods.push({
-						  id: node.body.funDecls[i].name
-						, original: node.body.funDecls[i].name
-						, start: node.body.funDecls[i].start
-						, end: node.body.funDecls[i].end
-						, line: node.body.funDecls[i].lineno
-						, parameters: paramsList
-						
-						, "public": node.body.funDecls[i]["public"]
-						, "private": node.body.funDecls[i]["private"]
-						, "protected": node.body.funDecls[i]["protected"]
-						, "static": node.body.funDecls[i]["static"]
-					});
-				}
-				else if (node.body.funDecls[i].type === jsdef.CLASS) {
-					nestedClasses.push({
-						  id: node.body.funDecls[i].name
-						, original: node.body.funDecls[i].name
-						, start: node.body.funDecls[i].start
-						, end: node.body.funDecls[i].end
-						, line: node.body.funDecls[i].lineno
-						
-						, "public": node.body.funDecls[i]["public"]
-						, "private": node.body.funDecls[i]["private"]
-						, "protected": node.body.funDecls[i]["protected"]
-						, "static": node.body.funDecls[i]["static"]
-					});
-				}
-			}
-		}
-		
-		var scopeId = getSymbolTableScopeId();
-		_this.symbols.push({
-			  id: node.name
-			, original: node.name
-			, "extends": node["extends"]
-			, extends_original: node["extends"]
-			, start: node.start
-			, end: node.end
-			, line: node.lineno
-			, scope: scopeId
-			, token: jsdef.CLASS
-			
-			, fields: classFields
-			, methods: classMethods
-			, classes: nestedClasses
-		});
-	};
-	function getSymbolTableScopeId() {
-		var currentScope = _this.CurrentScope(), scopeId = -1;
-		switch (currentScope.type) {
-			case jsdef.SCRIPT:
-			case jsdef.BLOCK:
-				return currentScope.scopeId;
-			case jsdef.CLASS:
-				return currentScope.body.scopeId;
-		}
-		
-		return -1;
-	}
-	
-	//Scope Table
-	this.scopeTable = [];
 
 	//Classes
 	this.currentClass = "";
@@ -696,6 +552,8 @@ function compiler(ast, options) {
 }
 compiler.prototype.typesys = {}; //Storage for pluggable type systems
 
+compiler.prototype.SymbolTable = {}; //Storage for pluggable symbol recorder
+
 compiler.prototype.compile = function (ast) {
 	var out = [], _this = this, ast = ast || this.ast, context, scope;
 	var generate = function(){
@@ -704,7 +562,7 @@ compiler.prototype.compile = function (ast) {
 
 	if (this.options.debug && ast.lineno != this.lineno) {
 		this.lineno != -1 && out.push("\n");
-		out.push("\/\/@line " + ast.lineno + "\n");
+		out.push("\/\/@line " + (ast.lineno-this.currFileStartLine) + "\n");
 		this.lineno = ast.lineno;
 	}
 
@@ -797,12 +655,6 @@ compiler.prototype.compile = function (ast) {
 
 			if (isGlobalScope) {
 				this.varCache = null;
-				
-				//Output symbol table
-				if (this.options.symbols) {
-					out.push("var __SYMBOLS__ = " + JSON.stringify(this.symbols) + ";");
-					out.push("var __SCOPES__ = " + JSON.stringify(this.scopeTable) + ";");
-				}
 			}
 
 			this.ExitScope();
@@ -852,12 +704,13 @@ compiler.prototype.compile = function (ast) {
 				privateMembers = [], //Check for re-declarations of vars/functions
 				hasAccessModifier,
 				extendsClass = ast.extends ? generate(ast.extends) : undefined;
-
+			
+			// First define class				
+			this.NewClass(ast, extendsClass);
+			
 			if (this.options.symbols && !ast.nestedParent) {
 				this.SymbolTable.insertClass(ast);
 			}
-			
-			this.NewClass(ast, extendsClass);
 
 			hasAccessModifier = ast.public ||
 								ast.private ||
@@ -2135,13 +1988,21 @@ compiler.prototype.compile = function (ast) {
 					varList.push({
 						identifier: id,
 						value: varObject.value = ast[item].initializer,
-						type: ast[item].type || undefined
-					});
+						type: ast[item].type || undefined,
+						lineno: ast[item].lineno,
+						start: ast[item].start,
+						end: ast[item].end,
+						vartype: ast[item].vartype || undefined						
+					});					
 				}else {
 					varList.push({
 						identifier: id,
-						type: ast[item].vartype || undefined
-					});
+						type: ast[item].vartype || undefined,
+						lineno: ast[item].lineno,
+						start: ast[item].start,
+						end: ast[item].end,
+						vartype: ast[item].vartype || undefined
+					});					
 				}
 
 				//Has this variable already been declared in the current context?
@@ -2191,6 +2052,10 @@ compiler.prototype.compile = function (ast) {
 			}
 
 			for (var i=0, len=varList.length, currentId = ""; i<len; i++) {
+				
+				if(prefix) 
+					varList[i]._symbol = prefix.replace(/this\./, this.classId + ".") + varList[i].identifier;					
+				
 				if (!firstVar) {
 					if (insideClass && prefix) {
 						out.push(";" + prefix);
@@ -2202,9 +2067,8 @@ compiler.prototype.compile = function (ast) {
 
 				out.push(currentId = varList[i].identifier);
 				
-				if (!insideClass && this.options.symbols) {
-					this.SymbolTable.insertVariable(varList[i]);
-				}
+				//Record value for code-completion hints in code symbols.
+				var value;
 
 				if ("value" in varList[i]) {
 					if (varList[i].value && varList[i].value.name === void 0) {
@@ -2245,14 +2109,17 @@ compiler.prototype.compile = function (ast) {
 							varList[i].value.body.static = ast.static;
 						}
 					}
-
-					out.push("=" + generate(varList[i].value));
+					
+					value=generate(varList[i].value);
+					out.push("=" + value);
 				}
 				else if (typeof varList[i].type == "string" &&
-						 this.types.hasOwnProperty(varList[i].type)) {
-					out.push("=" + this.types[varList[i].type]["default"]);
+						 this.types.hasOwnProperty(varList[i].type)) {					
+					value=this.types[varList[i].type]["default"];
+					out.push("=" + value);
 				}
 				else if (insideClass) {
+					value="undefined";
 					out.push("=undefined");
 				}
 
@@ -2281,7 +2148,10 @@ compiler.prototype.compile = function (ast) {
 						message: "Redeclaration of let " + currentId
 					}, ast);
 				}
-
+				
+				varList[i]._value = value;
+				varList[i]._insideClass = insideClass;					
+				_this.SymbolTable.insertVariable(varList[i]);												
 				firstVar = false;
 			}
 			out.push(";");
@@ -2503,10 +2373,16 @@ compiler.prototype.compile = function (ast) {
 								else {
 									out.push(findIdentifier);
 								}
+								
+								//Member Variables __CLASS__ "member"								
+								_this.SymbolTable.insertIdentifier(ast, out, "MEMBER");								
 							}
 							//Found variable is declared elsewhere
 							else {
 								out.push(findIdentifier);
+								
+								//Non-member variable (eg. window) "global"
+								_this.SymbolTable.insertIdentifier(ast, out, "GLOBAL");								
 							}
 						}
 						//Couldn't find variable declaration
@@ -2565,6 +2441,10 @@ compiler.prototype.compile = function (ast) {
 									}
 								}
 							}
+							
+							//Inherited member variable "inherited_member"
+							if(inheritedMember)
+								_this.SymbolTable.insertIdentifier(ast, out, "INHERITED_MEMBER");
 
 							if (!inheritedMember &&
                             
@@ -2667,6 +2547,7 @@ compiler.prototype.compile = function (ast) {
 				ast[1].isMember = true;
 			}
 			out.push(generate(ast[1]));
+			_this.SymbolTable.insertReference(ast, out); 				
 			break;
 
 		//Assignment
@@ -2810,7 +2691,11 @@ compiler.prototype.compile = function (ast) {
 			else {
 				out.push(id + assignment);
 			}
-
+			
+			//Check if assignment is prototype member (ClassXXX.prototype.yyy=zzz) and add it to symbols table as class.
+			if((ast[0] && ast[0].value=="prototype") || (ast[0][0] && ast[0][0].value=="prototype"))
+				_this.SymbolTable.insertPrototypeMember(ast, out);
+			
 			break;
 
 		//Statements
@@ -3049,7 +2934,20 @@ compiler.prototype.compile = function (ast) {
 				out.push('"' + ast.value + '"');
 				//out.push(JSON.stringify(ast.value.replace(/\\\r?\n/gm, "\n").replace(/\\(.)/gm, "$1")));
 			}
+			
+			//=========================================================================
+			//Detect file change in input stram and mark file line and offset
+			var f = out.join("");			
+			if(f.indexOf(this.FILE_DELIM)!=-1)
+			{
+				this.currFile = f.substr(this.FILE_DELIM.length+1, f.lastIndexOf('"')-this.FILE_DELIM.length-1 );
+				this.currFileStartLine = ast.lineno;
+				this.currFileOffset = ast.start + f.length +2;								
+				trace("Compiling file: " + this.currFile + " (L:"+this.currFileStartLine+" P:"+this.currFileOffset + ")");
+			}			
+			//=========================================================================
 			break;
+			
 		case jsdef.NUMBER:
 			out.push(ast.value);
 			break;
