@@ -214,8 +214,8 @@ function compiler(ast, options) {
 	};
 
 	this.CurrentFunction = function(currentScopeId) {
-		var currentScope;
-		if (currentScope = this.scopeChain[currentScopeId] || this.scopeChain[currentScopeId]) {
+		var currentScope = this.scopeChain[currentScopeId];
+		if (currentScope) {
 			if (currentScope.isFunction) {
 				return currentScope;
 			}
