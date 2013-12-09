@@ -1,4 +1,4 @@
-JavaScript++ Alpha 0.014.1
+JavaScript++
 -----------------------
 
 JavaScript++ provides the same familiar C-style language syntax of JavaScript and brings modern language features such as classes; block scoping and constants; pluggable type systems and type safety; packages and modules; comprehensive standard libraries; enhanced regular expressions and PCRE; and more to JavaScript with almost no learning curve through an extended ES3 grammar.
@@ -12,8 +12,6 @@ The JavaScript++ compiler supports regular JavaScript so there is practically no
 JavaScript++ incorporates features from Python, Perl, Java/C#, ES4, Harmony, Haskell, and more while incorporating its own unique features. The driving philosophy behind JavaScript++ is productivity, and it will make everything from small scripts to large applications easier and faster to write. Take the mundane out of your JavaScript code and enjoy the good parts of JavaScript with JavaScript++!
 
 -----------------------
-
-This is an early alpha preview version.
 
 Official website: http://jspp.javascript.am/
 
