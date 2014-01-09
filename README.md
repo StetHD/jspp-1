@@ -13,7 +13,8 @@ JavaScript++ incorporates features from Python, Perl, Java/C#, ES4, Harmony, Has
 
 -----------------------
 
-Official website: http://jspp.javascript.am/
+Official website: http://www.jspplang.org/
+Upcoming: http://jspp.launchrock.com/
 
 Tutorial: http://jspp.javascript.am/tutorial.html
 
