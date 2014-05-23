@@ -1,7 +1,7 @@
 JavaScript++ (JSPP)
 -----------------------
 
-VISIT THE NEW WEBSITE: http://www.jspplang.org/
+Visit the new website to stay up to date: http://www.jspplang.org/
 
 Credits
 -------
