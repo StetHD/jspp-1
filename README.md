@@ -1,12 +1,10 @@
-JavaScript++ (JSPP)
+JS++ (JSPP) Compiler
 -----------------------
 
 Visit the new website to stay up to date: http://www.jspplang.org/
 
 Credits
 -------
-Brendan Eich - JavaScript & Narcissus  
 Guillaume Lathoud - v8/JSC port of Narcissus  
-Roger Poon - JavaScript++ Language  
+Roger Poon - JS++ Language and Compiler
 Jussi Kalliokoski - CLI Compiler  
-QUnit - QUnit testing framework
